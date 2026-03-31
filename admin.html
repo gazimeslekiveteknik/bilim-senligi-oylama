@@ -77,6 +77,10 @@
             margin-top: 10px;
             padding: 5px 10px;
             font-size: 14px;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
         }
 
         .print-btn:hover {
@@ -107,11 +111,10 @@
     </div>
 
     <script type="module">
-        // 1. ADIM: FIREBASE BAĞLANTISI
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // LÜTFEN AŞAĞIDAKİ ALANA KENDİ FIREBASE CONFIG KODLARINIZI YAPIŞTIRIN
+        // Kendi Firebase Config Kodlarınız (Sizin tarafınızdan sağlanan)
         const firebaseConfig = {
             apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
             authDomain: "bilim-senligi-oylama.firebaseapp.com",
@@ -125,9 +128,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Kendi sitenizin adresini buraya yazacaksınız (Şimdilik test amaçlı lokal adres)
-        // Örnek: const siteUrl = "https://okulsenlik.com/oyla.html";
-        const siteUrl = window.location.origin + "/oyla.html";
+        // VERCEL ADRESİNİZ (Karekodlar bu adrese yönlendirecek)
+        const siteUrl = "https://bilim-senligi-oylama.vercel.app/oyla.html";
 
         const ekleBtn = document.getElementById('ekleBtn');
         const projeListesi = document.getElementById('projeListesi');
@@ -148,8 +150,8 @@
 
                 projeListesi.innerHTML += `
                 <div class="project-card">
-                    <h3>${data.proje_adi}</h3>
-                    <p style="color: #666; font-size: 14px;">${data.ogrenci_adi}</p>
+                    <h3 style="margin-top:0;">${data.proje_adi}</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom:10px;">${data.ogrenci_adi}</p>
                     <img src="${qrApiUrl}" alt="Karekod" class="qr-image">
                     <br>
                     <button class="print-btn" onclick="window.print()">Karekodu Yazdır</button>
