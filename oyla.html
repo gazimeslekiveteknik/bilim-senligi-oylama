@@ -1,285 +1,270 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Proje Oylama</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
+        /* Modern Gradient Arka Plan */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
             text-align: center;
-        }
-
-        .container {
-            background: white;
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 30px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            color: #1a73e8;
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .student-name {
-            color: #5f6368;
-            font-size: 16px;
-            margin-bottom: 25px;
-        }
-
-        .info-box {
-            background-color: #e8f0fe;
-            color: #1967d2;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .vote-buttons {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
         }
 
-        .btn-vote {
-            flex: 1;
-            background-color: #fff;
-            border: 2px solid #1a73e8;
-            color: #1a73e8;
-            font-size: 20px;
-            font-weight: bold;
-            padding: 15px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
+        /* Glassmorphism (Buzlu Cam) Efektli Kutu */
+        .container { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            max-width: 400px; 
+            width: 100%;
+            padding: 40px 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .btn-vote:active {
-            background-color: #1a73e8;
-            color: white;
-            transform: scale(0.95);
+        h1 { color: #2d3748; font-size: 26px; margin-bottom: 8px; font-weight: 800; }
+        .student-name { color: #718096; font-size: 16px; margin-bottom: 30px; font-weight: 500; }
+        
+        /* Şık Bilgi Kutusu */
+        .info-box { 
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            color: #2b6cb0; 
+            padding: 12px; 
+            border-radius: 12px; 
+            font-size: 14px; 
+            margin-bottom: 25px; 
+            font-weight: bold; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* Yenilikçi Oy Butonları */
+        .vote-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+        .btn-vote { 
+            flex: 1; 
+            background-color: #ffffff; 
+            border: 2px solid #cbd5e0; 
+            color: #4a5568; 
+            font-size: 22px; 
+            font-weight: 800; 
+            padding: 15px 0; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .btn-vote:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(102, 126, 234, 0.2);
         }
 
-        .btn-vote:disabled {
-            border-color: #ccc;
-            color: #ccc;
-            background-color: #f9f9f9;
-            cursor: not-allowed;
-            transform: none;
+        .btn-vote:active { 
+            background-color: #667eea; 
+            color: white; 
+            transform: translateY(2px) scale(0.95); 
+            box-shadow: none;
         }
-
-        #mesajAlani {
-            margin-top: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #28a745;
-            display: none;
+        
+        .btn-vote:disabled { 
+            border-color: #e2e8f0; 
+            color: #a0aec0; 
+            background-color: #f7fafc; 
+            cursor: not-allowed; 
+            transform: none; 
+            box-shadow: none;
         }
-
-        .error {
-            color: #dc3545 !important;
+        
+        #mesajAlani { margin-top: 25px; font-size: 17px; font-weight: bold; display: none; padding: 15px; border-radius: 12px; }
+        .success-msg { background-color: #c6f6d5; color: #22543d; }
+        .error-msg { background-color: #fed7d7; color: #742a2a; }
+        
+        /* Modern Yükleniyor Animasyonu */
+        .loader { 
+            display: none; 
+            margin: 30px auto; 
+            width: 40px; 
+            height: 40px; 
+            border: 4px solid rgba(102, 126, 234, 0.3); 
+            border-radius: 50%; 
+            border-top-color: #667eea; 
+            animation: spin 1s ease-in-out infinite; 
         }
-
-        .loader {
-            display: none;
-            margin: 20px auto;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #1a73e8;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
 
-    <div class="container">
-        <div id="kotaBilgisi" class="info-box">Günlük Oy Hakkınız Kontrol Ediliyor...</div>
+<div class="container">
+    <div id="kotaBilgisi" class="info-box">Günlük Kota Kontrol Ediliyor... ⏳</div>
+    
+    <div id="icerikAlani" style="display: none;">
+        <h1 id="projeBaslik">Yükleniyor...</h1>
+        <div id="ogrenciAdi" class="student-name">Lütfen bekleyin</div>
 
-        <div id="icerikAlani" style="display: none;">
-            <h1 id="projeBaslik">Yükleniyor...</h1>
-            <div id="ogrenciAdi" class="student-name">Lütfen bekleyin</div>
-
-            <div class="vote-buttons" id="oyButonlari">
-                <button class="btn-vote" data-puan="1">1</button>
-                <button class="btn-vote" data-puan="2">2</button>
-                <button class="btn-vote" data-puan="3">3</button>
-                <button class="btn-vote" data-puan="4">4</button>
-                <button class="btn-vote" data-puan="5">5</button>
-            </div>
+        <div class="vote-buttons" id="oyButonlari">
+            <button class="btn-vote" data-puan="1">1</button>
+            <button class="btn-vote" data-puan="2">2</button>
+            <button class="btn-vote" data-puan="3">3</button>
+            <button class="btn-vote" data-puan="4">4</button>
+            <button class="btn-vote" data-puan="5">5</button>
         </div>
-
-        <div class="loader" id="yukleniyor"></div>
-        <div id="mesajAlani"></div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    <div class="loader" id="yukleniyor"></div>
+    <div id="mesajAlani"></div>
+</div>
 
-        // BURAYA YİNE KENDİ FIREBASE KODLARINIZI YAPIŞTIRIN
-        const firebaseConfig = {
-            apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
-            authDomain: "bilim-senligi-oylama.firebaseapp.com",
-            projectId: "bilim-senligi-oylama",
-            storageBucket: "bilim-senligi-oylama.firebasestorage.app",
-            messagingSenderId: "759289316087",
-            appId: "1:759289316087:web:885560206050005e6d49f2",
-            measurementId: "G-83VDG3TC70"
-        };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    // BURAYA YİNE KENDİ FIREBASE KODLARINIZI YAPIŞTIRIN
+    const firebaseConfig = {
+        apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
+        authDomain: "bilim-senligi-oylama.firebaseapp.com",
+        projectId: "bilim-senligi-oylama",
+        storageBucket: "bilim-senligi-oylama.firebasestorage.app",
+        messagingSenderId: "759289316087",
+        appId: "1:759289316087:web:885560206050005e6d49f2",
+        measurementId: "G-83VDG3TC70"
+    };
 
-        // URL'den Proje ID'sini alma (Örn: oyla.html?id=ABCDEFG)
-        const urlParams = new URLSearchParams(window.location.search);
-        const projeId = urlParams.get('id');
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        // Arayüz Elementleri
-        const kotaBilgisi = document.getElementById('kotaBilgisi');
-        const icerikAlani = document.getElementById('icerikAlani');
-        const projeBaslik = document.getElementById('projeBaslik');
-        const ogrenciAdi = document.getElementById('ogrenciAdi');
-        const oyButonlari = document.getElementById('oyButonlari');
-        const mesajAlani = document.getElementById('mesajAlani');
-        const yukleniyor = document.getElementById('yukleniyor');
+    const urlParams = new URLSearchParams(window.location.search);
+    const projeId = urlParams.get('id');
 
-        // --- GÜNLÜK KOTA MANTIĞI (LOCAL STORAGE) ---
-        function getDurum() {
-            const bugun = new Date().toLocaleDateString('tr-TR');
-            let durum = JSON.parse(localStorage.getItem('senlikOylama'));
+    const kotaBilgisi = document.getElementById('kotaBilgisi');
+    const icerikAlani = document.getElementById('icerikAlani');
+    const projeBaslik = document.getElementById('projeBaslik');
+    const ogrenciAdi = document.getElementById('ogrenciAdi');
+    const mesajAlani = document.getElementById('mesajAlani');
+    const yukleniyor = document.getElementById('yukleniyor');
 
-            // Eğer kayıt yoksa veya gün değişmişse kotayı 2 olarak sıfırla
-            if (!durum || durum.tarih !== bugun) {
-                durum = { tarih: bugun, kalanHak: 2, oylananlar: [] };
-                localStorage.setItem('senlikOylama', JSON.stringify(durum));
-            }
-            return durum;
+    function getDurum() {
+        const bugun = new Date().toLocaleDateString('tr-TR');
+        let durum = JSON.parse(localStorage.getItem('senlikOylama'));
+        
+        if (!durum || durum.tarih !== bugun) {
+            durum = { tarih: bugun, kalanHak: 2, oylananlar: [] };
+            localStorage.setItem('senlikOylama', JSON.stringify(durum));
+        }
+        return durum;
+    }
+
+    function durumGuncelle(yeniDurum) {
+        localStorage.setItem('senlikOylama', JSON.stringify(yeniDurum));
+    }
+
+    async function projeyiYukle() {
+        if (!projeId) {
+            hataGoster("⚠️ Geçersiz Karekod! Lütfen standdaki karekodu tekrar okutun.");
+            return;
         }
 
-        function durumGuncelle(yeniDurum) {
-            localStorage.setItem('senlikOylama', JSON.stringify(yeniDurum));
+        const durum = getDurum();
+        
+        if (durum.kalanHak <= 0) {
+            hataGoster("🛑 Bugünkü tüm oy haklarınızı (2/2) kullandınız. Yarın tekrar bekleriz!");
+            return;
         }
 
-        async function projeyiYukle() {
-            if (!projeId) {
-                hataGoster("Geçersiz Karekod! Lütfen standdaki karekodu tekrar okutun.");
-                return;
-            }
+        if (durum.oylananlar.includes(projeId)) {
+            hataGoster("👀 Bu projeye zaten oy verdiniz. Lütfen farklı projelere şans verin.");
+            kotaBilgisi.innerText = `💡 Bugün için kalan oy hakkınız: ${durum.kalanHak}`;
+            return;
+        }
 
+        kotaBilgisi.innerText = `🌟 Bugün için ${durum.kalanHak} oy hakkınız var.`;
+
+        try {
+            const projeRef = doc(db, "projeler", projeId);
+            const projeSnap = await getDoc(projeRef);
+
+            if (projeSnap.exists()) {
+                projeBaslik.innerText = projeSnap.data().proje_adi;
+                ogrenciAdi.innerText = projeSnap.data().ogrenci_adi;
+                icerikAlani.style.display = "block";
+            } else {
+                hataGoster("❌ Proje bulunamadı. Silinmiş veya yayından kaldırılmış olabilir.");
+            }
+        } catch (error) {
+            hataGoster("📶 Bağlantı hatası oluştu. Lütfen internetinizi kontrol edin.");
+        }
+    }
+
+    function hataGoster(mesaj) {
+        kotaBilgisi.style.display = "none";
+        icerikAlani.style.display = "none";
+        mesajAlani.innerText = mesaj;
+        mesajAlani.className = "error-msg";
+        mesajAlani.style.display = "block";
+    }
+
+    function basariGoster(kalanHak) {
+        icerikAlani.style.display = "none";
+        kotaBilgisi.style.display = "none";
+        mesajAlani.innerHTML = `🎉 <b>Harika!</b> Oyunuz başarıyla eklendi!<br><br>Bugün için kalan oy hakkınız: <b>${kalanHak}</b>`;
+        mesajAlani.className = "success-msg";
+        mesajAlani.style.display = "block";
+        
+        // KONFETİ PATLATMA EFEKTİ
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#667eea', '#764ba2', '#e0c3fc', '#ffffff']
+        });
+    }
+
+    document.querySelectorAll('.btn-vote').forEach(buton => {
+        buton.addEventListener('click', async (e) => {
+            const puan = parseInt(e.target.getAttribute('data-puan'));
             const durum = getDurum();
 
-            if (durum.kalanHak <= 0) {
-                hataGoster("Bugünkü tüm oy haklarınızı (2/2) kullandınız. Yarın tekrar bekleriz!");
-                return;
-            }
+            if (durum.kalanHak <= 0 || durum.oylananlar.includes(projeId)) return;
 
-            if (durum.oylananlar.includes(projeId)) {
-                hataGoster("Bu projeye zaten oy verdiniz. Lütfen farklı projeleri inceleyin.");
-                kotaBilgisi.innerText = `Bugün için kalan oy hakkınız: ${durum.kalanHak}`;
-                return;
-            }
-
-            kotaBilgisi.innerText = `🌟 Bugün için ${durum.kalanHak} oy hakkınız var.`;
+            document.querySelectorAll('.btn-vote').forEach(b => b.disabled = true);
+            yukleniyor.style.display = "block";
 
             try {
                 const projeRef = doc(db, "projeler", projeId);
-                const projeSnap = await getDoc(projeRef);
+                
+                await updateDoc(projeRef, {
+                    toplam_ham_puan: increment(puan),
+                    toplam_oy_sayisi: increment(1)
+                });
 
-                if (projeSnap.exists()) {
-                    projeBaslik.innerText = projeSnap.data().proje_adi;
-                    ogrenciAdi.innerText = projeSnap.data().ogrenci_adi;
-                    icerikAlani.style.display = "block";
-                } else {
-                    hataGoster("Proje bulunamadı. Silinmiş veya yayından kaldırılmış olabilir.");
-                }
+                durum.kalanHak -= 1;
+                durum.oylananlar.push(projeId);
+                durumGuncelle(durum);
+
+                yukleniyor.style.display = "none";
+                basariGoster(durum.kalanHak);
+
             } catch (error) {
-                hataGoster("Bağlantı hatası oluştu. İnternetinizi kontrol edin.");
+                console.error("Oy verme hatası:", error);
+                yukleniyor.style.display = "none";
+                alert("Oy verilirken bir hata oluştu. Lütfen tekrar deneyin.");
+                document.querySelectorAll('.btn-vote').forEach(b => b.disabled = false);
             }
-        }
-
-        function hataGoster(mesaj) {
-            kotaBilgisi.style.display = "none";
-            icerikAlani.style.display = "none";
-            mesajAlani.innerText = mesaj;
-            mesajAlani.className = "error";
-            mesajAlani.style.display = "block";
-        }
-
-        function basariGoster(kalanHak) {
-            icerikAlani.style.display = "none";
-            kotaBilgisi.style.display = "none";
-            mesajAlani.innerText = `✅ Oyunuz başarıyla eklendi!\nBugün için kalan oy hakkınız: ${kalanHak}`;
-            mesajAlani.style.color = "#28a745";
-            mesajAlani.style.display = "block";
-        }
-
-        // Oy Verme İşlemi
-        document.querySelectorAll('.btn-vote').forEach(buton => {
-            buton.addEventListener('click', async (e) => {
-                const puan = parseInt(e.target.getAttribute('data-puan'));
-                const durum = getDurum();
-
-                // Ekstra güvenlik kontrolü
-                if (durum.kalanHak <= 0 || durum.oylananlar.includes(projeId)) return;
-
-                // Butonları kilitle ve yükleniyor animasyonunu aç
-                document.querySelectorAll('.btn-vote').forEach(b => b.disabled = true);
-                yukleniyor.style.display = "block";
-
-                try {
-                    const projeRef = doc(db, "projeler", projeId);
-
-                    // Firestore'daki 'increment' özelliği ile veriyi okumadan doğrudan üstüne ekleme yapıyoruz
-                    await updateDoc(projeRef, {
-                        toplam_ham_puan: increment(puan),
-                        toplam_oy_sayisi: increment(1)
-                    });
-
-                    // Başarılı olursa kullanıcının telefonundaki sayacı düşür
-                    durum.kalanHak -= 1;
-                    durum.oylananlar.push(projeId);
-                    durumGuncelle(durum);
-
-                    yukleniyor.style.display = "none";
-                    basariGoster(durum.kalanHak);
-
-                } catch (error) {
-                    console.error("Oy verme hatası:", error);
-                    yukleniyor.style.display = "none";
-                    alert("Oy verilirken bir hata oluştu. Lütfen tekrar deneyin.");
-                    document.querySelectorAll('.btn-vote').forEach(b => b.disabled = false);
-                }
-            });
         });
+    });
 
-        // Sayfa açıldığında işlemleri başlat
-        projeyiYukle();
-    </script>
+    projeyiYukle();
+</script>
 
 </body>
-
 </html>
