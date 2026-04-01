@@ -3,121 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Proje Oylama</title>
+    <title>19 Mayıs Bilim ve Gençlik Şenliği - Oylama</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* Modern Gradient Arka Plan */
+        /* Modern Gradient ve Hareketli Arka Plan */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0; 
             padding: 20px; 
             text-align: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #090a1a 0%, #1c1f3d 50%, #30104a 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden; /* Arka plan animasyonu için */
+            position: relative;
         }
 
-        /* Glassmorphism (Buzlu Cam) Efektli Kutu */
+        /* Hareketli Neon Bilim İkonları Arka Planı */
+        .bg-icons {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0.15;
+            z-index: 0;
+            animation: moveIcons 60s linear infinite;
+        }
+        @keyframes moveIcons {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 1000px; }
+        }
+
+        /* Glassmorphism (Buzlu Cam) Efektli Kutu, Neon Vurgulu */
         .container { 
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            max-width: 400px; 
+            background: rgba(10, 11, 27, 0.7);
+            backdrop-filter: blur(15px);
+            max-width: 420px; 
             width: 100%;
             padding: 40px 25px; 
             border-radius: 20px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
-            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
+            border: 2px solid rgba(13, 110, 253, 0.5); /* Neon Mavi Vurgu */
+            position: relative;
+            z-index: 1;
         }
 
-        h1 { color: #2d3748; font-size: 26px; margin-bottom: 8px; font-weight: 800; }
-        .student-name { color: #718096; font-size: 16px; margin-bottom: 30px; font-weight: 500; }
+        /* Tema Detayları: Atatürk ve Bayrak */
+        .header-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .header-logo img.ataturk { height: 40px; opacity: 0.8; }
+        .header-logo img.bayrak { height: 25px; opacity: 0.9; }
+
+        h1 { color: #f8f9fa; font-size: 24px; margin-bottom: 5px; font-weight: 800; text-shadow: 0 0 10px rgba(13, 110, 253, 0.8); }
+        .fest-sub { color: #fed7d7; font-size: 14px; margin-bottom: 30px; font-weight: 600; text-transform: uppercase; }
+        .student-name { color: #cbd5e0; font-size: 16px; margin-bottom: 25px; font-weight: 500; }
         
-        /* Şık Bilgi Kutusu */
+        /* Şık ve Neon Kota Bilgi Kutusu */
         .info-box { 
-            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-            color: #2b6cb0; 
+            background: rgba(13, 110, 253, 0.1);
+            color: #8ec5fc; 
             padding: 12px; 
             border-radius: 12px; 
             font-size: 14px; 
             margin-bottom: 25px; 
             font-weight: bold; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid rgba(13, 110, 253, 0.6);
+            box-shadow: 0 0 10px rgba(13, 110, 253, 0.2);
         }
         
-        /* Yenilikçi Oy Butonları */
-        .vote-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
-        .btn-vote { 
-            flex: 1; 
-            background-color: #ffffff; 
-            border: 2px solid #cbd5e0; 
-            color: #4a5568; 
-            font-size: 22px; 
-            font-weight: 800; 
-            padding: 15px 0; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        /* Google Play Tarzı Yıldızlı Puan Butonları */
+        .vote-buttons { 
+            display: flex; 
+            justify-content: center; 
+            gap: 10px; 
+            margin-top: 20px; 
         }
-        
-        .btn-vote:hover {
-            border-color: #667eea;
-            color: #667eea;
-            transform: translateY(-3px);
-            box-shadow: 0 7px 14px rgba(102, 126, 234, 0.2);
+        .star-rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+            gap: 5px;
+        }
+        .star-rating input { display: none; }
+        .star-rating label {
+            position: relative;
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+        /* Yıldız İkonu */
+        .star-rating label::before {
+            content: '\2605'; /* Yıldız İkonu */
+            font-size: 30px;
+            color: rgba(255, 255, 255, 0.15);
+            transition: all 0.2s;
+            position: absolute;
+            z-index: 1;
+        }
+        /* Ortadaki Rakam */
+        .star-rating label::after {
+            content: attr(data-puan);
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 800;
+            position: absolute;
+            z-index: 2;
         }
 
-        .btn-vote:active { 
-            background-color: #667eea; 
-            color: white; 
-            transform: translateY(2px) scale(0.95); 
-            box-shadow: none;
+        /* Hover ve Seçilme Efektleri: Sağdan Sola */
+        .star-rating label:hover,
+        .star-rating label:hover ~ label,
+        .star-rating input:checked ~ label {
+            background-color: rgba(255, 215, 0, 0.1);
+            border-color: rgba(255, 215, 0, 0.6);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
         }
-        
-        .btn-vote:disabled { 
-            border-color: #e2e8f0; 
-            color: #a0aec0; 
-            background-color: #f7fafc; 
-            cursor: not-allowed; 
-            transform: none; 
-            box-shadow: none;
+        .star-rating label:hover::before,
+        .star-rating label:hover ~ label::before,
+        .star-rating input:checked ~ label::before {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
         }
-        
+        .star-rating label:hover::after,
+        .star-rating label:hover ~ label::after,
+        .star-rating input:checked ~ label::after {
+            color: #2d3748;
+            text-shadow: none;
+        }
+
         #mesajAlani { margin-top: 25px; font-size: 17px; font-weight: bold; display: none; padding: 15px; border-radius: 12px; }
-        .success-msg { background-color: #c6f6d5; color: #22543d; }
-        .error-msg { background-color: #fed7d7; color: #742a2a; }
+        .success-msg { background-color: rgba(72, 187, 120, 0.1); color: #c6f6d5; border: 1px solid rgba(72, 187, 120, 0.4); }
+        .error-msg { background-color: rgba(245, 101, 101, 0.1); color: #fed7d7; border: 1px solid rgba(245, 101, 101, 0.4); }
         
-        /* Modern Yükleniyor Animasyonu */
+        /* Modern Yükleniyor Animasyonu: Atom Simge */
         .loader { 
             display: none; 
             margin: 30px auto; 
-            width: 40px; 
-            height: 40px; 
-            border: 4px solid rgba(102, 126, 234, 0.3); 
+            width: 50px; 
+            height: 50px; 
+            border: 4px solid rgba(13, 110, 253, 0.2); 
             border-radius: 50%; 
-            border-top-color: #667eea; 
+            border-top-color: #ffd700; /* Yıldız Sarısı */
             animation: spin 1s ease-in-out infinite; 
+            position: relative;
+        }
+        .loader::after {
+            content: '\269B'; /* Atom İkonu */
+            font-size: 25px;
+            color: #8ec5fc;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: spinRev 2s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spinRev { to { transform: translate(-50%, -50%) rotate(-360deg); } }
     </style>
 </head>
 <body>
 
+<div class="bg-icons" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22 opacity=%220.3%22%3E%3Cpath d=%22M10 10l8 8m-8 0l8-8%22 stroke=%22%238ec5fc%22 stroke-width=%221%22/%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%225%22 stroke=%22%23ffd700%22 stroke-width=%221%22/%3E%3Cpath d=%22M80 20l5 10m-5 0l5-10%22 stroke=%22%23e0c3fc%22 stroke-width=%221%22/%3E%3C/svg%3E');"></div>
+
 <div class="container">
+    <div class="header-logo">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Mustafa_Kemal_Atat%C3%BCrk_silhouette.svg" alt="Atatürk" class="ataturk">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg" alt="Bayrak" class="bayrak">
+    </div>
+    <h1>19 MAYIS ÖZEL</h1>
+    <div class="fest-sub">BİLİM VE GENÇLİK ŞENLİĞİ</div>
+
     <div id="kotaBilgisi" class="info-box">Günlük Kota Kontrol Ediliyor... ⏳</div>
     
     <div id="icerikAlani" style="display: none;">
-        <h1 id="projeBaslik">Yükleniyor...</h1>
+        <h1 id="projeBaslik" style="font-size:22px; margin-bottom:10px;">Yükleniyor...</h1>
         <div id="ogrenciAdi" class="student-name">Lütfen bekleyin</div>
 
-        <div class="vote-buttons" id="oyButonlari">
-            <button class="btn-vote" data-puan="1">1</button>
-            <button class="btn-vote" data-puan="2">2</button>
-            <button class="btn-vote" data-puan="3">3</button>
-            <button class="btn-vote" data-puan="4">4</button>
-            <button class="btn-vote" data-puan="5">5</button>
+        <div class="vote-buttons">
+            <div class="star-rating">
+                <input type="radio" name="rating" id="star5" value="5"><label for="star5" data-puan="5"></label>
+                <input type="radio" name="rating" id="star4" value="4"><label for="star4" data-puan="4"></label>
+                <input type="radio" name="rating" id="star3" value="3"><label for="star3" data-puan="3"></label>
+                <input type="radio" name="rating" id="star2" value="2"><label for="star2" data-puan="2"></label>
+                <input type="radio" name="rating" id="star1" value="1"><label for="star1" data-puan="1"></label>
+            </div>
         </div>
     </div>
 
@@ -129,7 +214,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-    // BURAYA YİNE KENDİ FIREBASE KODLARINIZI YAPIŞTIRIN
+    // Kendi Firebase Config Kodlarınız
     const firebaseConfig = {
         apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
         authDomain: "bilim-senligi-oylama.firebaseapp.com",
@@ -225,18 +310,20 @@
             particleCount: 150,
             spread: 70,
             origin: { y: 0.6 },
-            colors: ['#667eea', '#764ba2', '#e0c3fc', '#ffffff']
+            colors: ['#0d6efd', '#ffd700', '#ffffff'] /* Neon Mavi, Altın */
         });
     }
 
-    document.querySelectorAll('.btn-vote').forEach(buton => {
-        buton.addEventListener('click', async (e) => {
-            const puan = parseInt(e.target.getAttribute('data-puan'));
+    // Yıldızlara Dokunma İşlemi
+    document.querySelectorAll('.star-rating input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const puan = parseInt(e.target.value);
             const durum = getDurum();
 
             if (durum.kalanHak <= 0 || durum.oylananlar.includes(projeId)) return;
 
-            document.querySelectorAll('.btn-vote').forEach(b => b.disabled = true);
+            // Yıldızları kilitle ve atom yükleniyor animasyonunu aç
+            document.querySelectorAll('.star-rating input').forEach(b => b.disabled = true);
             yukleniyor.style.display = "block";
 
             try {
@@ -258,7 +345,7 @@
                 console.error("Oy verme hatası:", error);
                 yukleniyor.style.display = "none";
                 alert("Oy verilirken bir hata oluştu. Lütfen tekrar deneyin.");
-                document.querySelectorAll('.btn-vote').forEach(b => b.disabled = false);
+                document.querySelectorAll('.star-rating input').forEach(b => b.disabled = false);
             }
         });
     });
