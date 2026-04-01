@@ -9,10 +9,9 @@
             --neon-blue: #00e5ff;
             --neon-purple: #bd00ff;
             --neon-pink: #ff00ff;
-            --gold: #ffc107;
+            --gold-dull: rgba(255, 215, 0, 0.25);
+            --gold-bright: #ffd700;
             --bg-dark: #070314;
-            --card-glass: rgba(30, 20, 60, 0.4);
-            --card-border: rgba(255, 255, 255, 0.1);
         }
 
         * {
@@ -25,10 +24,9 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-dark);
-            /* Uzay/Teknoloji arka plan hissi */
             background-image: 
-                radial-gradient(circle at 15% 50%, rgba(189, 0, 255, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(0, 229, 255, 0.15), transparent 25%);
+                radial-gradient(circle at 15% 50%, rgba(189, 0, 255, 0.08), transparent 30%),
+                radial-gradient(circle at 85% 30%, rgba(0, 229, 255, 0.08), transparent 30%);
             color: white;
             display: flex;
             justify-content: center;
@@ -52,34 +50,30 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 10px;
+            padding: 0 5px;
         }
 
         .school-logo {
             width: 60px;
             height: 60px;
-            border-radius: 50%;
-            box-shadow: 0 0 15px var(--neon-blue);
-            /* GIF zaten dönüyorsa bu ekstra olabilir, ama statik kalırsa diye eklendi */
-            animation: pulseGlow 2s infinite alternate; 
+            /* Çerçeve ve gölge tamamen kaldırıldı */
         }
 
         .turkish-flag {
             width: 70px;
             height: auto;
             border-radius: 5px;
-            /* Bayrak dalgalanma efekti */
             animation: waveFlag 3s ease-in-out infinite alternate;
             transform-origin: center left;
         }
 
         /* --- Ana Başlık --- */
         .title-container {
-            margin-top: -10px;
+            margin-top: -5px;
         }
 
         .main-title {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 800;
             color: #fff;
             text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-purple);
@@ -88,47 +82,45 @@
         }
 
         .sub-title {
-            font-size: 16px;
+            font-size: 15px;
             color: var(--neon-blue);
             text-shadow: 0 0 8px var(--neon-blue);
             letter-spacing: 2px;
         }
 
-        /* --- Hareketli Neon Çerçeve Ortak Sınıfı --- */
-        .neon-box {
+        /* --- Temiz Neon Sınır (Border) Animasyonu --- */
+        .animated-border-wrapper {
             position: relative;
-            background: var(--card-glass);
-            border-radius: 15px;
-            padding: 15px;
-            backdrop-filter: blur(10px);
-            z-index: 1;
+            border-radius: 12px;
+            padding: 2px; /* Çerçeve kalınlığı */
             overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
-        /* Çerçeve etrafında dönen ışık hüzmesi */
-        .neon-box::before {
+        /* İçeriye sızmayan hareketli ışık kaynağı */
+        .animated-border-wrapper::before {
             content: '';
             position: absolute;
             top: -50%; left: -50%; width: 200%; height: 200%;
-            background: conic-gradient(
-                transparent, 
-                var(--neon-blue), 
-                transparent 30%, 
-                var(--neon-purple), 
-                transparent 60%
-            );
-            animation: rotateGlow 4s linear infinite;
-            z-index: -2;
+            background: conic-gradient(transparent, var(--neon-blue), transparent 25%);
+            animation: spinBorder 4s linear infinite;
+            z-index: 1;
         }
 
-        /* İç boşluk maskesi */
-        .neon-box::after {
-            content: '';
-            position: absolute;
-            inset: 2px; /* Çerçeve kalınlığı */
-            background: rgba(10, 5, 25, 0.9); /* İç arka plan */
-            border-radius: 13px;
-            z-index: -1;
+        /* İkinci kutu için farklı renk, farklı yön ve farklı hız (Senkronizasyonu bozar) */
+        .wrapper-2::before {
+            background: conic-gradient(transparent, var(--neon-purple), transparent 30%);
+            animation: spinBorder 6s linear infinite reverse;
+        }
+
+        /* Işığın merkezini kapatan ve sadece kenarları bırakan katı arka plan */
+        .animated-border-inner {
+            position: relative;
+            background: rgba(12, 8, 25, 0.95); /* Mat, koyu arka plan */
+            border-radius: 10px; /* Dış kapsayıcıdan 2px küçük */
+            padding: 15px;
+            z-index: 2;
+            height: 100%;
         }
 
         /* --- Progress Section --- */
@@ -137,24 +129,20 @@
             color: #ddd;
             margin-bottom: 8px;
             font-weight: 600;
-            position: relative;
-            z-index: 2;
         }
 
         .progress-bar-container {
             width: 100%;
-            height: 12px;
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 6px;
+            height: 10px;
+            background-color: rgba(255,255,255,0.05);
+            border-radius: 5px;
             overflow: hidden;
-            position: relative;
-            z-index: 2;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
         }
 
         .progress-bar-fill {
             height: 100%;
-            width: 0%; /* JS ile dolacak */
+            width: 0%;
             background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue));
             box-shadow: 0 0 10px var(--neon-blue);
             transition: width 0.5s ease-out;
@@ -163,8 +151,6 @@
         /* --- Project Panel --- */
         .project-panel {
             text-align: left;
-            position: relative;
-            z-index: 2;
         }
 
         .panel-info {
@@ -189,131 +175,107 @@
             font-weight: 500;
         }
 
-        /* --- Oylama Grid Sistemi (Görseldeki gibi) --- */
-        .voting-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        /* 4. ve 5. butonları alt satıra ortalamak için */
-        .vote-card:nth-child(4) {
-            grid-column: 1 / span 1;
-            margin-left: 50%; /* Kaydırma hilesi */
-        }
-        .vote-card:nth-child(5) {
-            grid-column: 2 / span 2;
-            margin-right: 50%;
-        }
-
-        .vote-card {
-            background: rgba(25, 25, 45, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 15px;
-            padding: 15px 5px;
+        /* --- Tek Satır Yıldız Sistemi --- */
+        .star-rating-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            backdrop-filter: blur(5px);
-            min-height: 120px;
+            margin: 15px 0;
         }
 
-        .vote-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 229, 255, 0.3);
-            border-color: rgba(0, 229, 255, 0.5);
-        }
-
-        .vote-card:active {
-            transform: scale(0.95);
-        }
-
-        .vote-card.selected {
-            border-color: var(--neon-pink);
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
-            background: rgba(255, 0, 255, 0.1);
-            transform: scale(1.05);
-        }
-
-        .card-number {
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 5px;
-        }
-
-        .card-stars {
+        .stars-container {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap; /* Asla alt satıra geçmez */
             justify-content: center;
-            gap: 2px;
-            margin-bottom: 8px;
-            height: 40px; /* Sabit yükseklik, yıldızlar taşmasın diye */
-            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
         }
 
         .star {
-            color: var(--gold);
-            font-size: 18px;
-            text-shadow: 0 0 5px var(--gold);
+            font-size: 45px;
+            color: var(--gold-dull);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: idleGlow 2s infinite alternate;
         }
 
-        .card-text {
-            font-size: 14px;
-            color: #aaa;
+        .star.active {
+            color: var(--gold-bright);
+            animation: activeGlow 1.5s infinite alternate;
+            transform: scale(1.1);
         }
 
-        .vote-btn-container {
+        .star:active {
+            transform: scale(0.9);
+        }
+
+        .rating-feedback {
             margin-top: 10px;
+            min-height: 24px;
+            font-size: 15px;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .rating-feedback span {
+            color: var(--gold-bright);
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        /* --- Gönder Butonu --- */
+        .vote-btn-container {
+            margin-top: 5px;
         }
 
         .submit-btn {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             background: linear-gradient(45deg, var(--neon-purple), var(--neon-blue));
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(189, 0, 255, 0.5);
+            box-shadow: 0 0 15px rgba(189, 0, 255, 0.4);
             transition: all 0.3s;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .submit-btn:disabled {
-            background: #333;
-            color: #777;
+            background: #222;
+            color: #555;
             box-shadow: none;
             cursor: not-allowed;
         }
 
         .submit-btn:not(:disabled):hover {
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.8);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.7);
             transform: scale(1.02);
         }
 
         /* --- Animasyonlar --- */
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 10px var(--neon-blue); }
-            100% { box-shadow: 0 0 25px var(--neon-purple); }
-        }
-
         @keyframes waveFlag {
             0% { transform: skewY(0deg) scaleY(1); }
-            50% { transform: skewY(-3deg) scaleY(1.02); }
+            50% { transform: skewY(-2deg) scaleY(1.02); }
             100% { transform: skewY(2deg) scaleY(0.98); }
         }
 
-        @keyframes rotateGlow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        @keyframes spinBorder {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes idleGlow {
+            0% { text-shadow: 0 0 2px rgba(255, 215, 0, 0.1); transform: scale(1); }
+            100% { text-shadow: 0 0 8px rgba(255, 215, 0, 0.3); transform: scale(1.05); }
+        }
+
+        @keyframes activeGlow {
+            0% { text-shadow: 0 0 10px var(--gold-bright); }
+            100% { text-shadow: 0 0 20px var(--gold-bright), 0 0 30px #ffa500; }
         }
 
     </style>
@@ -330,15 +292,17 @@
             <img src="image_abb96a.png" alt="Türk Bayrağı" class="turkish-flag">
         </header>
 
-        <section class="neon-box">
-            <p class="progress-text">Günlük Oy Hakkı: <span id="votesUsedDisplay">0</span>/2 Kullanıldı</p>
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="progressBarFill"></div>
+        <div class="animated-border-wrapper">
+            <div class="animated-border-inner">
+                <p class="progress-text">Günlük Oy Hakkı: <span id="votesUsedDisplay">0</span>/2 Kullanıldı</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
             </div>
-        </section>
+        </div>
 
-        <section class="neon-box">
-            <div class="project-panel">
+        <div class="animated-border-wrapper wrapper-2">
+            <div class="animated-border-inner project-panel">
                 <div class="panel-info">
                     <span class="info-label">Proje:</span>
                     <span class="info-value" id="projectName">Yükleniyor...</span>
@@ -348,35 +312,20 @@
                     <span class="info-value" id="studentName">Yükleniyor...</span>
                 </div>
             </div>
-        </section>
-
-        <div class="voting-grid">
-            <div class="vote-card" data-puan="1" onclick="selectVote(1)">
-                <div class="card-number">1</div>
-                <div class="card-stars"><span class="star">★</span></div>
-                <div class="card-text">1 Puan</div>
-            </div>
-            <div class="vote-card" data-puan="2" onclick="selectVote(2)">
-                <div class="card-number">2</div>
-                <div class="card-stars"><span class="star">★</span><span class="star">★</span></div>
-                <div class="card-text">2 Puan</div>
-            </div>
-            <div class="vote-card" data-puan="3" onclick="selectVote(3)">
-                <div class="card-number">3</div>
-                <div class="card-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-                <div class="card-text">3 Puan</div>
-            </div>
-            <div class="vote-card" data-puan="4" onclick="selectVote(4)">
-                <div class="card-number">4</div>
-                <div class="card-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-                <div class="card-text">4 Puan</div>
-            </div>
-            <div class="vote-card" data-puan="5" onclick="selectVote(5)">
-                <div class="card-number">5</div>
-                <div class="card-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-                <div class="card-text">5 Puan</div>
-            </div>
         </div>
+
+        <section class="star-rating-section">
+            <div class="stars-container" id="starsContainer">
+                <span class="star" data-value="1" onclick="selectStars(1)">★</span>
+                <span class="star" data-value="2" onclick="selectStars(2)">★</span>
+                <span class="star" data-value="3" onclick="selectStars(3)">★</span>
+                <span class="star" data-value="4" onclick="selectStars(4)">★</span>
+                <span class="star" data-value="5" onclick="selectStars(5)">★</span>
+            </div>
+            <div class="rating-feedback" id="ratingFeedback">
+                Puan vermek için yıldızlara dokunun
+            </div>
+        </section>
 
         <div class="vote-btn-container">
             <button id="submitVoteBtn" class="submit-btn" onclick="submitVote()" disabled>OYU GÖNDER</button>
@@ -388,7 +337,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Kendi Firebase Config Kodlarınız
         const firebaseConfig = {
             apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
             authDomain: "bilim-senligi-oylama.firebaseapp.com",
@@ -404,21 +352,17 @@
 
         // Global Değişkenler
         let selectedPuan = 0;
-        const maxVotes = 2; // GÜNLÜK OY SINIRI BURADA 2 OLARAK BELİRLENDİ
-        let currentVotesUsed = 0; // Gerçekte LocalStorage veya User tabanından çekilmeli
+        const maxVotes = 2; 
+        let currentVotesUsed = 0; 
         let currentProjectId = null;
 
-        // URL'den ID'yi al
         const urlParams = new URLSearchParams(window.location.search);
         currentProjectId = urlParams.get('id');
 
-        // Sayfa yüklendiğinde projeyi getir ve oy hakkını kontrol et
         async function init() {
-            // LocalStorage'dan günlük oy durumunu kontrol et (Basit Yöntem)
             const today = new Date().toLocaleDateString();
             const voteData = JSON.parse(localStorage.getItem('voteData')) || { date: today, count: 0, votedProjects: [] };
             
-            // Eğer yeni bir günse sayacı sıfırla
             if(voteData.date !== today) {
                 voteData.date = today;
                 voteData.count = 0;
@@ -429,7 +373,6 @@
             currentVotesUsed = voteData.count;
             updateProgressUI();
 
-            // Firebase'den Proje Bilgisini Çek
             if (currentProjectId) {
                 try {
                     const docRef = doc(db, "projeler", currentProjectId);
@@ -451,20 +394,18 @@
                 document.getElementById("studentName").textContent = "Lütfen karekodu tekrar okutun.";
             }
 
-            // Hak bittiyse butonu tamamen kapat
             if(currentVotesUsed >= maxVotes) {
                 document.getElementById("submitVoteBtn").textContent = "GÜNLÜK OY HAKKINIZ DOLDU";
             }
         }
 
-        // Kart Seçim İşlemi (Global Window objesine ekliyoruz ki HTML'den erişilebilsin)
-        window.selectVote = function(puan) {
+        // Yıldız Seçim Mantığı
+        window.selectStars = function(puan) {
             if (currentVotesUsed >= maxVotes) {
                 alert("Günlük 2 oy hakkınızı doldurdunuz. Yarın tekrar bekleriz!");
                 return;
             }
 
-            // Daha önce bu projeye oy verdiyse engelle
             const voteData = JSON.parse(localStorage.getItem('voteData'));
             if(voteData && voteData.votedProjects.includes(currentProjectId)) {
                 alert("Bu projeye zaten oy verdiniz. Lütfen başka projeleri inceleyin!");
@@ -473,15 +414,21 @@
 
             selectedPuan = puan;
             
-            // Seçimi arayüzde göster
-            document.querySelectorAll('.vote-card').forEach(card => card.classList.remove('selected'));
-            document.querySelector(`.vote-card[data-puan="${puan}"]`).classList.add('selected');
+            // Seçilen yıldıza kadar olanları aktif et
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                if (index < puan) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
 
-            // Gönder butonunu aktifleştir
+            // Geri bildirim metnini güncelle
+            document.getElementById('ratingFeedback').innerHTML = `<span>${puan} Puan</span> seçildi`;
             document.getElementById("submitVoteBtn").disabled = false;
         }
 
-        // Oyu Firebase'e Gönder (Global)
         window.submitVote = async function() {
             if (!currentProjectId || selectedPuan === 0) return;
 
@@ -490,14 +437,12 @@
             btn.textContent = "GÖNDERİLİYOR...";
 
             try {
-                // Firebase Güncellemesi
                 const docRef = doc(db, "projeler", currentProjectId);
                 await updateDoc(docRef, {
                     toplam_ham_puan: increment(selectedPuan),
                     toplam_oy_sayisi: increment(1)
                 });
 
-                // LocalStorage Güncellemesi (Oy sayısını artır ve projeyi kaydet)
                 const voteData = JSON.parse(localStorage.getItem('voteData'));
                 voteData.count++;
                 voteData.votedProjects.push(currentProjectId);
@@ -507,10 +452,10 @@
                 updateProgressUI();
 
                 // Başarı Ekranı
-                document.querySelector('.voting-grid').innerHTML = `
-                    <div style="grid-column: 1 / -1; padding: 30px; background: rgba(0,255,0,0.1); border-radius: 15px; border: 1px solid #0f0;">
-                        <h2 style="color: #0f0; margin-bottom: 10px;">Oyunuz Alındı!</h2>
-                        <p>${selectedPuan} Puan başarıyla gönderildi.</p>
+                document.querySelector('.star-rating-section').innerHTML = `
+                    <div style="padding: 20px; background: rgba(0,255,0,0.1); border-radius: 10px; border: 1px solid rgba(0,255,0,0.3); width: 100%;">
+                        <h3 style="color: #0f0; margin-bottom: 5px;">Oyunuz Alındı!</h3>
+                        <p style="color: #ddd;">Projeye ${selectedPuan} puan verdiniz.</p>
                     </div>
                 `;
                 btn.style.display = 'none';
@@ -533,7 +478,6 @@
             document.getElementById('progressBarFill').style.width = `${percentage}%`;
         }
 
-        // Sayfa yüklenince başlat
         init();
     </script>
 </body>
