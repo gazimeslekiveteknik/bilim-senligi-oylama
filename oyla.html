@@ -951,11 +951,11 @@
             </div>
         </header>
 
-        <!-- REMAINING VOTES -->
+        <!-- USED VOTES -->
         <section class="votes-section" id="votesSection">
             <div class="votes-section__label">
-                <span class="votes-section__text">Kalan Oy Hakkınız</span>
-                <span class="votes-section__count" id="voteCountDisplay">—</span>
+                <span class="votes-section__text">Kullanılan Oy</span>
+                <span class="votes-section__count" id="voteCountDisplay">0 / 2</span>
             </div>
             <div class="progress-bar">
                 <div class="progress-bar__fill" id="progressFill" style="width: 0%;"></div>
@@ -1139,15 +1139,16 @@
 
         // ── Update Progress UI ──
         function updateProgressUI(kalanHak) {
-            voteCountDisplay.textContent = `${kalanHak} / 2`;
+            const kullanilanOy = 2 - (kalanHak || 0);
+            voteCountDisplay.textContent = `${kullanilanOy} / 2`;
 
-            const pct = (kalanHak / 2) * 100;
+            const pct = (kullanilanOy / 2) * 100;
             setTimeout(() => {
                 progressFill.style.width = pct + '%';
             }, 300);
 
-            // Dots
-            if (kalanHak >= 1) {
+            // Dots — dot lights up when that vote is USED
+            if (kullanilanOy >= 1) {
                 dot1.classList.add('active');
                 dot1.classList.remove('used');
             } else {
@@ -1155,7 +1156,7 @@
                 dot1.classList.add('used');
             }
 
-            if (kalanHak >= 2) {
+            if (kullanilanOy >= 2) {
                 dot2.classList.add('active');
                 dot2.classList.remove('used');
             } else {
@@ -1173,7 +1174,8 @@
 
             if (kalanHak !== null) {
                 messageRemaining.style.display = 'inline-block';
-                messageRemaining.textContent = `Kalan oy hakkı: ${kalanHak} / 2`;
+                const kullanilan = 2 - (kalanHak || 0);
+                messageRemaining.textContent = `Kullanılan oy: ${kullanilan} / 2`;
             } else {
                 messageRemaining.style.display = 'none';
             }
@@ -1186,6 +1188,9 @@
         }
 
         // ── Load Project ──
+        // Always update progress on page load
+        updateProgressUI(getDurum().kalanHak);
+
         async function projeyiYukle() {
             if (!projeId) {
                 showMessage('error', 'Geçersiz QR Kod', 'Lütfen standdaki QR kodu tekrar okutun.');
