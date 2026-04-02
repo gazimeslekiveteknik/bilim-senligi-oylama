@@ -43,14 +43,16 @@
 
         html {
             scroll-behavior: smooth;
+            height: 100dvh;
+            overflow: hidden;
         }
 
         body {
             font-family: var(--font-body);
             background: var(--bg-primary);
             color: var(--text-primary);
-            min-height: 100dvh;
-            overflow-x: hidden;
+            height: 100dvh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -165,11 +167,13 @@
             z-index: 1;
             width: 100%;
             max-width: 480px;
-            min-height: 100dvh;
-            padding: 16px 16px 32px;
+            height: 100dvh;
+            padding: 10px 14px 12px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            justify-content: space-between;
+            gap: 8px;
+            overflow: hidden;
         }
 
         /* ═══════════════════════════════════════
@@ -277,8 +281,8 @@
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border: 1px solid var(--border-glass);
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 14px 18px;
             animation: fadeSlideUp 0.7s ease-out 0.1s both;
         }
 
@@ -391,8 +395,8 @@
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border: 1px solid var(--border-glass);
-            border-radius: 20px;
-            padding: 28px 24px;
+            border-radius: 16px;
+            padding: 16px 20px;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -423,8 +427,8 @@
         }
 
         .project-card__icon {
-            font-size: 36px;
-            margin-bottom: 12px;
+            font-size: 28px;
+            margin-bottom: 6px;
             display: inline-block;
             animation: iconFloat 3s ease-in-out infinite;
         }
@@ -435,7 +439,7 @@
         }
 
         .project-card__label {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -445,22 +449,22 @@
 
         .project-card__name {
             font-family: var(--font-display);
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 800;
             line-height: 1.25;
             background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 50%, #94a3b8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 14px;
+            margin-bottom: 8px;
         }
 
         .project-card__divider {
             width: 50px;
-            height: 3px;
+            height: 2px;
             background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
             border-radius: 10px;
-            margin: 0 auto 14px;
+            margin: 0 auto 8px;
         }
 
         .project-card__group-label {
@@ -487,8 +491,8 @@
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border: 1px solid var(--border-glass);
-            border-radius: 20px;
-            padding: 28px 20px;
+            border-radius: 16px;
+            padding: 16px 16px;
             text-align: center;
             animation: fadeSlideUp 0.9s ease-out 0.3s both;
         }
@@ -732,12 +736,11 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background: rgba(10, 14, 26, 0.9);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: var(--bg-primary);
             opacity: 0;
             visibility: hidden;
-            transition: all 0.4s ease;
+            transition: all 0.5s ease;
+            overflow: hidden;
         }
 
         .message-overlay.visible {
@@ -745,56 +748,196 @@
             visibility: visible;
         }
 
+        /* Animated background orbs inside overlay */
+        .message-overlay .msg-bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+
+        .message-overlay .msg-bg-orb--1 {
+            width: 300px; height: 300px;
+            top: -15%; left: -15%;
+            opacity: 0.5;
+            animation: orbFloat 15s ease-in-out infinite;
+        }
+
+        .message-overlay .msg-bg-orb--2 {
+            width: 250px; height: 250px;
+            bottom: -10%; right: -10%;
+            opacity: 0.4;
+            animation: orbFloat 20s ease-in-out infinite reverse;
+        }
+
+        .message-overlay--success .msg-bg-orb--1 {
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.5) 0%, transparent 70%);
+        }
+        .message-overlay--success .msg-bg-orb--2 {
+            background: radial-gradient(circle, var(--accent-gold) 0%, transparent 70%);
+        }
+        .message-overlay--error .msg-bg-orb--1 {
+            background: radial-gradient(circle, var(--accent-red) 0%, transparent 70%);
+        }
+        .message-overlay--error .msg-bg-orb--2 {
+            background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+        }
+
+        /* Particle grid inside overlay */
+        .message-overlay .msg-particles {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0);
+            background-size: 40px 40px;
+            animation: particlesDrift 50s linear infinite;
+            pointer-events: none;
+        }
+
         .message-box {
-            background: var(--bg-card);
+            position: relative;
+            z-index: 2;
+            background: rgba(15, 20, 40, 0.7);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
             border: 1px solid var(--border-glass);
             border-radius: 24px;
-            padding: 40px 32px;
+            padding: 40px 28px 32px;
             text-align: center;
             max-width: 360px;
             width: 100%;
-            transform: scale(0.9) translateY(20px);
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: scale(0.8) translateY(30px);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Gradient border glow */
+        .message-box::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 25px;
+            z-index: -1;
+            opacity: 0.6;
+            transition: opacity 0.5s ease;
+        }
+
+        .message-box--success::before {
+            background: linear-gradient(135deg, rgba(34,197,94,0.4), rgba(255,215,0,0.4), rgba(6,182,212,0.3));
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        .message-box--error::before {
+            background: linear-gradient(135deg, rgba(239,68,68,0.4), rgba(251,146,60,0.3), rgba(59,130,246,0.3));
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
         }
 
         .message-overlay.visible .message-box {
             transform: scale(1) translateY(0);
         }
 
-        .message-box__icon {
-            font-size: 56px;
-            margin-bottom: 16px;
+        /* Pulsing ring behind icon */
+        .message-box__icon-wrapper {
+            position: relative;
             display: inline-block;
-            animation: iconPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+            margin-bottom: 16px;
         }
 
-        @keyframes iconPop {
-            from { transform: scale(0) rotate(-20deg); }
-            to { transform: scale(1) rotate(0deg); }
+        .message-box__icon-ring {
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            border: 2px solid;
+            opacity: 0;
+            animation: ringPulse 2s ease-out infinite;
+        }
+
+        .message-box__icon-ring:nth-child(2) { animation-delay: 0.6s; }
+        .message-box__icon-ring:nth-child(3) { animation-delay: 1.2s; }
+
+        .message-box--success .message-box__icon-ring {
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+        .message-box--error .message-box__icon-ring {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        @keyframes ringPulse {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .message-box__icon {
+            font-size: 52px;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+        }
+
+        .message-overlay.visible .message-box__icon {
+            animation: iconPopBounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+        }
+
+        @keyframes iconPopBounce {
+            0% { transform: scale(0) rotate(-30deg); }
+            60% { transform: scale(1.2) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* Error icon shake */
+        .message-box--error .message-box__icon {
+            animation: iconShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.4s both;
+        }
+
+        @keyframes iconShake {
+            0%, 100% { transform: translateX(0); }
+            15% { transform: translateX(-8px) rotate(-5deg); }
+            30% { transform: translateX(7px) rotate(4deg); }
+            45% { transform: translateX(-6px) rotate(-3deg); }
+            60% { transform: translateX(5px) rotate(2deg); }
+            75% { transform: translateX(-3px) rotate(-1deg); }
         }
 
         .message-box__title {
             font-family: var(--font-display);
-            font-size: 22px;
-            font-weight: 800;
+            font-size: 24px;
+            font-weight: 900;
             margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+
+        .message-overlay.visible .message-box__title {
+            animation: textSlideUp 0.5s ease-out 0.25s both;
+        }
+
+        @keyframes textSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message-box__text {
+            font-family: var(--font-body);
             font-size: 14px;
             color: var(--text-secondary);
             line-height: 1.6;
         }
 
+        .message-overlay.visible .message-box__text {
+            animation: textSlideUp 0.5s ease-out 0.35s both;
+        }
+
         .message-box--success .message-box__title {
-            background: linear-gradient(135deg, #22c55e, #86efac);
+            background: linear-gradient(135deg, #22c55e 0%, #86efac 50%, var(--accent-gold) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
         .message-box--error .message-box__title {
-            background: linear-gradient(135deg, #ef4444, #fca5a5);
+            background: linear-gradient(135deg, #ef4444 0%, #fb923c 50%, #fbbf24 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -808,9 +951,13 @@
             font-family: var(--font-display);
             font-size: 13px;
             font-weight: 700;
-            background: rgba(255, 215, 0, 0.1);
+            background: rgba(255, 215, 0, 0.08);
             color: var(--accent-gold);
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+        }
+
+        .message-overlay.visible .message-box__remaining {
+            animation: textSlideUp 0.5s ease-out 0.45s both;
         }
 
         /* ═══════════════════════════════════════
@@ -860,10 +1007,40 @@
            RESPONSIVE
         ═══════════════════════════════════════ */
         @media (max-width: 380px) {
-            .header__logo { width: 44px; height: 44px; border-radius: 10px; }
-            .header__title { font-size: 14px; }
-            .star { width: 44px; height: 44px; }
-            .project-card__name { font-size: 20px; }
+            .header__logo { width: 40px; height: 40px; border-radius: 10px; }
+            .header__title { font-size: 13px; }
+            .header__flag-container { width: 60px; height: 40px; }
+            .star { width: 40px; height: 40px; }
+            .project-card__name { font-size: 18px; }
+            .project-card { padding: 12px 16px; }
+            .rating-section { padding: 12px; }
+            .votes-section { padding: 10px 14px; }
+        }
+
+        @media (max-height: 700px) {
+            .page-wrapper { gap: 5px; padding: 6px 12px 8px; }
+            .header { padding: 8px 12px; }
+            .header__logo { width: 40px; height: 40px; }
+            .project-card { padding: 10px 16px; }
+            .project-card__icon { font-size: 22px; margin-bottom: 4px; }
+            .project-card__name { font-size: 17px; margin-bottom: 6px; }
+            .rating-section { padding: 10px 14px; }
+            .rating-section__title { margin-bottom: 2px; }
+            .rating-section__hint { margin-bottom: 10px; }
+            .stars-container { gap: 6px; margin-bottom: 12px; }
+            .star { width: 40px; height: 40px; }
+            .btn-submit { padding: 12px 20px; font-size: 14px; }
+            .footer { padding: 4px; font-size: 8px; }
+            .footer__ata { font-size: 9px; }
+            .votes-section { padding: 10px 14px; }
+        }
+
+        @media (max-height: 600px) {
+            .page-wrapper { gap: 4px; padding: 4px 10px 6px; }
+            .project-card__icon { display: none; }
+            .project-card__divider { margin: 4px auto; }
+            .footer__ata { display: none; }
+            .star { width: 36px; height: 36px; }
         }
 
         /* ═══════════════════════════════════════
@@ -893,19 +1070,20 @@
         /* Footer */
         .footer {
             text-align: center;
-            padding: 10px;
-            font-size: 10px;
+            padding: 4px;
+            font-size: 9px;
             color: var(--text-muted);
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             animation: fadeSlideUp 1s ease-out 0.5s both;
+            flex-shrink: 0;
         }
 
         .footer__ata {
             display: block;
-            margin-top: 4px;
+            margin-top: 2px;
             font-style: italic;
-            font-size: 11px;
-            color: rgba(255, 215, 0, 0.4);
+            font-size: 10px;
+            color: rgba(255, 215, 0, 0.35);
         }
     </style>
 </head>
@@ -927,8 +1105,18 @@
 
     <!-- Message Overlay -->
     <div class="message-overlay" id="messageOverlay">
+        <!-- Overlay background effects -->
+        <div class="msg-bg-orb msg-bg-orb--1"></div>
+        <div class="msg-bg-orb msg-bg-orb--2"></div>
+        <div class="msg-particles"></div>
+
         <div class="message-box" id="messageBox">
-            <div class="message-box__icon" id="messageIcon">✅</div>
+            <div class="message-box__icon-wrapper">
+                <div class="message-box__icon-ring"></div>
+                <div class="message-box__icon-ring"></div>
+                <div class="message-box__icon-ring"></div>
+                <div class="message-box__icon" id="messageIcon">🎉</div>
+            </div>
             <div class="message-box__title" id="messageTitle">Başarılı!</div>
             <div class="message-box__text" id="messageText">Oyunuz başarıyla kaydedildi.</div>
             <div class="message-box__remaining" id="messageRemaining" style="display:none;"></div>
@@ -1167,6 +1355,8 @@
 
         // ── Show Messages ──
         function showMessage(type, title, text, kalanHak = null) {
+            // Set classes on both overlay and box for theming
+            messageOverlay.className = `message-overlay message-overlay--${type}`;
             messageBox.className = `message-box message-box--${type}`;
             messageIcon.textContent = type === 'success' ? '🎉' : '⚠️';
             messageTitle.textContent = title;
@@ -1180,6 +1370,8 @@
                 messageRemaining.style.display = 'none';
             }
 
+            // Re-trigger animations by forcing reflow
+            void messageOverlay.offsetWidth;
             messageOverlay.classList.add('visible');
 
             if (type === 'success') {
