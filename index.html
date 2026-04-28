@@ -6,28 +6,33 @@
     <title>Gazi MTAL - Bilim Şenliği Yönetici Paneli</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
         h1, h2 { color: #333; text-align: center; }
         .form-group { margin-bottom: 15px; }
         input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.3s; font-weight: 600; }
         .btn-success { background-color: #28a745; color: white; }
         .btn-success:hover { background-color: #218838; }
         .btn-primary { background-color: #007bff; color: white; }
-        .btn-danger { background-color: #dc3545; color: white; margin-top: 10px; }
+        .btn-primary:hover { background-color: #0069d9; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-danger:hover { background-color: #c82333; }
         #adminPanel, #loginSection { margin-top: 20px; }
-        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
-        .project-card { border: 1px solid #eee; padding: 15px; text-align: center; border-radius: 8px; background-color: #fafafa; }
-        .qr-image { max-width: 150px; margin: 10px 0; }
-        @media print { .no-print { display: none; } }
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 30px; }
+        .project-card { border: 1px solid #eee; padding: 15px; text-align: center; border-radius: 8px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; }
+        .project-card h3 { font-size: 16px; margin-bottom: 5px; color: #222; }
+        .project-card p { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .qr-image { max-width: 140px; margin: 0 auto 15px; border: 1px solid #eee; padding: 5px; background: white; }
+        .card-actions { display: flex; flex-direction: column; gap: 8px; }
+        @media print { .no-print { display: none; } .project-card { border: 1px solid #000; break-inside: avoid; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🔬 Bilim Şenliği Yönetici Paneli</h1>
+    <h1 class="no-print">🔬 Bilim Şenliği Yönetici Paneli</h1>
     
-    <div id="loginSection">
+    <div id="loginSection" class="no-print">
         <h2>Yönetici Girişi</h2>
         <input type="email" id="loginEmail" placeholder="E-posta Adresi">
         <input type="password" id="loginPassword" placeholder="Şifre">
@@ -35,17 +40,18 @@
     </div>
 
     <div id="adminPanel" style="display: none;">
-        <p>Hoş geldiniz. Yeni proje ekleyebilir ve karekod üretebilirsiniz.</p>
-        <div class="form-group">
-            <input type="text" id="projeAdi" placeholder="Proje Adı">
+        <div class="no-print">
+            <p>Hoş geldiniz. Yeni proje ekleyebilir, karekod üretebilir veya mevcut projeleri silebilirsiniz.</p>
+            <div class="form-group">
+                <input type="text" id="projeAdi" placeholder="Proje Adı">
+            </div>
+            <div class="form-group">
+                <input type="text" id="ogrenciAdi" placeholder="Öğrenci veya Grup Adı">
+            </div>
+            <button id="ekleBtn" class="btn-success">Projeyi Ekle ve Karekod Üret</button>
+            <button id="logoutBtn" class="btn-danger" style="margin-top: 10px;">Oturumu Kapat</button>
+            <hr style="margin: 30px 0;">
         </div>
-        <div class="form-group">
-            <input type="text" id="ogrenciAdi" placeholder="Öğrenci veya Grup Adı">
-        </div>
-        <button id="ekleBtn" class="btn-success">Projeyi Ekle ve Karekod Üret</button>
-        <button id="logoutBtn" class="btn-danger no-print">Oturumu Kapat</button>
-
-        <hr style="margin: 30px 0;">
 
         <h2>Mevcut Stantlar</h2>
         <div class="project-grid" id="projeListesi"></div>
@@ -54,8 +60,22 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { 
+        getFirestore, 
+        collection, 
+        addDoc, 
+        getDocs, 
+        query, 
+        orderBy, 
+        deleteDoc, 
+        doc 
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        onAuthStateChanged, 
+        signOut 
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
@@ -86,7 +106,7 @@
         }
     });
 
-    // GİRİŞ YAPMA FONKSİYONU
+    // GİRİŞ YAPMA
     document.getElementById('loginBtn').addEventListener('click', async () => {
         const email = document.getElementById('loginEmail').value;
         const pass = document.getElementById('loginPassword').value;
@@ -97,31 +117,62 @@
         }
     });
 
-    // ÇIKIŞ YAPMA FONKSİYONU
+    // ÇIKIŞ YAPMA
     document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+
+    // PROJE SİLME FONKSİYONU
+    async function projeSil(id) {
+        if (confirm("Bu projeyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+            try {
+                await deleteDoc(doc(db, "projeler", id));
+                alert("Proje başarıyla silindi.");
+                projeleriGetir();
+            } catch (e) {
+                alert("Hata: Proje silinemedi. Yetkiniz olmayabilir.");
+            }
+        }
+    }
+
+    // Fonksiyonu HTML butonlarından çağırabilmek için global kapsama alıyoruz
+    window.projeSil = projeSil;
 
     // PROJELERİ LİSTELEME
     async function projeleriGetir() {
         const projeListesi = document.getElementById('projeListesi');
         projeListesi.innerHTML = "<em>Yükleniyor...</em>";
-        const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc"));
-        const querySnapshot = await getDocs(q);
-        projeListesi.innerHTML = "";
+        
+        try {
+            const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc"));
+            const querySnapshot = await getDocs(q);
+            projeListesi.innerHTML = "";
 
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const oylamaLinki = `${siteUrl}?id=${doc.id}`;
-            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(oylamaLinki)}`;
+            if (querySnapshot.empty) {
+                projeListesi.innerHTML = "<p>Henüz kayıtlı proje bulunmuyor.</p>";
+                return;
+            }
 
-            projeListesi.innerHTML += `
-                <div class="project-card">
-                    <h3>${data.proje_adi}</h3>
-                    <p>${data.ogrenci_adi}</p>
-                    <img src="${qrApiUrl}" class="qr-image">
-                    <button class="btn-primary no-print" onclick="window.print()">Yazdır</button>
-                </div>
-            `;
-        });
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const oylamaLinki = `${siteUrl}?id=${doc.id}`;
+                const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(oylamaLinki)}`;
+
+                projeListesi.innerHTML += `
+                    <div class="project-card">
+                        <div>
+                            <h3>${data.proje_adi}</h3>
+                            <p><strong>${data.ogrenci_adi}</strong></p>
+                            <img src="${qrApiUrl}" class="qr-image" alt="Karekod">
+                        </div>
+                        <div class="card-actions no-print">
+                            <button class="btn-primary" onclick="window.print()">Yazdır</button>
+                            <button class="btn-danger" onclick="projeSil('${doc.id}')">Projeyi Sil</button>
+                        </div>
+                    </div>
+                `;
+            });
+        } catch (e) {
+            projeListesi.innerHTML = "Veriler alınırken bir hata oluştu.";
+        }
     }
 
     // PROJE EKLEME
@@ -129,7 +180,7 @@
         const pAdi = document.getElementById('projeAdi').value;
         const oAdi = document.getElementById('ogrenciAdi').value;
 
-        if (!pAdi || !oAdi) return alert("Boş alan bırakmayın!");
+        if (!pAdi || !oAdi) return alert("Lütfen tüm alanları doldurun!");
 
         try {
             await addDoc(collection(db, "projeler"), {
@@ -143,7 +194,7 @@
             document.getElementById('ogrenciAdi').value = "";
             projeleriGetir();
         } catch (e) {
-            alert("Hata: Yetkiniz olmayabilir.");
+            alert("Hata: Proje eklenemedi.");
         }
     });
 </script>
