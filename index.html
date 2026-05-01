@@ -32,11 +32,14 @@
         #adminPanel, #loginSection { margin-top: 20px; }
         
         .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 30px; }
-        .project-card { border: 1px solid #e0e0e0; padding: 20px; text-align: center; border-radius: 8px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
+        .project-card { position: relative; border: 1px solid #e0e0e0; padding: 20px; text-align: center; border-radius: 8px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
         .project-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .project-card h3 { font-size: 18px; margin-bottom: 5px; color: #222; min-height: 44px;}
         .project-card .grup-title { font-size: 14px; font-weight: bold; color: #444; margin-bottom: 5px; }
         .project-card p { font-size: 13px; color: #666; margin-bottom: 15px; }
+        
+        /* Proje Seçim Tiki (Checkbox) Stili */
+        .project-checkbox { position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; cursor: pointer; accent-color: #dc3545; }
         
         .stats-box { background-color: #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 14px; }
         .stats-box .stat-item { display: flex; flex-direction: column; }
@@ -82,7 +85,6 @@
         <div class="no-print">
             <p style="text-align: center; color: #666;">Şenlik projelerini buradan ekleyebilir, düzenleyebilir ve ayarları yapabilirsiniz.</p>
             
-            <!-- SİSTEM AYARLARI KUTUSU -->
             <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #ffc107;">
                 <h3 style="margin-top: 0; color: #856404; font-size: 16px;">⚙️ Sistem Ayarları</h3>
                 <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
@@ -92,12 +94,11 @@
                 </div>
             </div>
 
-            <!-- GOOGLE SHEETS İÇE AKTARMA KUTUSU -->
             <div style="background: #e2e3e5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #6c757d;">
                 <h3 style="margin-top: 0; color: #383d41; font-size: 16px;">📥 Google Tablolardan Toplu İçe Aktarım</h3>
                 <p style="font-size: 13px; color: #555; margin-bottom: 15px;">
-                    Google Form yanıtlarınızı sisteme topluca çekmek için, Google Tablonuzu açıp <strong>Dosya &gt; Paylaş &gt; Web'de Yayınla</strong> menüsünden <strong>"Virgülle ayrılmış değerler (.csv)"</strong> seçeneği ile yayınlayın. Çıkan linki aşağıya yapıştırın.<br>
-                    <em>* Aynı isimli projeler (ufak harf hataları olsa bile) otomatik birleştirilir, mükerrer olanlar atlanır ve grup adları boş bırakılır.</em>
+                    Google Form yanıtlarınızı sisteme topluca çekmek için, Google Tablonuzu açıp <strong>Dosya &gt; Paylaş &gt; Web'de Yayınla</strong> menüsünden <strong>"Virgülle ayrılmış değerler (.csv)"</strong> seçeneği ile yayınlayın.<br>
+                    <em>* "Robot (montaj)" veya "Graf torisi" gibi harf ve eklenti farklılığı olan projeler Zeki Algoritma ile otomatik olarak tek çatı altında birleştirilecektir.</em>
                 </p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="sheetCsvLink" placeholder="Google Tablolar CSV Yayın Linki (https://docs.google.com/spreadsheets/.../pub?output=csv)" style="margin-bottom: 0; flex: 1; min-width: 250px;">
@@ -105,7 +106,6 @@
                 </div>
             </div>
 
-            <!-- TEKİL PROJE EKLEME KUTUSU -->
             <div style="background: #eef2f5; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top: 0;">Tekil Proje Ekle</h3>
                 <div class="form-group">
@@ -123,8 +123,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2>Mevcut Stantlar ve Durumlar</h2>
                 <div>
-                    <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 20px; margin-right: 10px;">Excel (CSV) İndir</button>
-                    <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 20px;">Oturumu Kapat</button>
+                    <!-- YENİ EKLENEN TOPLU SİLME VE SEÇİM BUTONLARI -->
+                    <button id="selectAllBtn" class="btn-warning" style="width: auto; padding: 8px 15px; margin-right: 5px;">Tümünü Seç</button>
+                    <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; margin-right: 10px; display: none;">Seçilenleri Sil (0)</button>
+                    
+                    <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px; margin-right: 5px;">Excel İndir</button>
+                    <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 15px;">Çıkış</button>
                 </div>
             </div>
             <hr style="margin: 10px 0 30px;">
@@ -143,7 +147,6 @@
         getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut 
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    // Firebase Ayarları
     const firebaseConfig = {
         apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
         authDomain: "bilim-senligi-oylama.firebaseapp.com",
@@ -162,7 +165,6 @@
 
     function getOylamaUrl(id) { return new URL(`oyla.html?id=${id}`, window.location.href).href; }
 
-    // AYARLARI ÇEK
     async function ayarlariGetir() {
         try {
             const docSnap = await getDoc(doc(db, "ayarlar", "genel"));
@@ -172,20 +174,15 @@
         } catch (e) { console.error("Ayar çekilemedi", e); }
     }
 
-    // AYARLARI KAYDET
     document.getElementById('kaydetAyarBtn').addEventListener('click', async () => {
         const limit = parseInt(document.getElementById('oyLimiti').value);
         if (!limit || limit < 1) return Swal.fire('Hata', 'Geçerli bir sayı girin.', 'warning');
-        
         try {
             await setDoc(doc(db, "ayarlar", "genel"), { gunlukOyHakki: limit }, { merge: true });
             Swal.fire({ icon: 'success', title: 'Ayarlar Kaydedildi', text: `Katılımcıların günlük oy limiti ${limit} olarak güncellendi.`, timer: 2000 });
-        } catch (e) {
-            Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error');
-        }
+        } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error'); }
     });
 
-    // GOOGLE SHEETS TOPLU İÇE AKTARMA
     document.getElementById('importSheetBtn').addEventListener('click', async () => {
         const csvUrl = document.getElementById('sheetCsvLink').value.trim();
         if (!csvUrl || !csvUrl.includes('pub?output=csv')) {
@@ -207,22 +204,18 @@
                 }
 
                 document.getElementById('importSheetBtn').innerText = "İşleniyor...";
-                
-                // Mükerrer kayıt kontrolü için veritabanındaki mevcut projeleri çek
+
                 const existingSnapshot = await getDocs(collection(db, "projeler"));
                 const existingKeys = new Set();
                 existingSnapshot.forEach(doc => {
-                    const d = doc.data();
-                    if(d.proje_adi) {
-                        // Proje adını küçük harfe çevirip boşlukları ve işaretleri silerek eşsiz anahtar yap
-                        existingKeys.add(d.proje_adi.toLocaleLowerCase('tr-TR').replace(/[\s\.\-\/\_]/g, ''));
+                    if(doc.data().proje_adi) {
+                        existingKeys.add(normalizeProjectName(doc.data().proje_adi));
                     }
                 });
 
                 const projelerMap = new Map();
 
                 data.forEach(row => {
-                    // Google Form'daki olası sütun isimleri
                     const adCol = Object.keys(row).find(k => k.toLocaleLowerCase('tr-TR').includes('adınız') || k.toLocaleLowerCase('tr-TR').includes('ad soyad') || k.toLocaleLowerCase('tr-TR').includes('isim'));
                     const projeCol = Object.keys(row).find(k => k.toLocaleLowerCase('tr-TR').includes('konusu') || k.toLocaleLowerCase('tr-TR').includes('içeriği') || k.toLocaleLowerCase('tr-TR').includes('proje adı'));
 
@@ -231,17 +224,13 @@
                         let projeOrj = row[projeCol] ? row[projeCol].trim() : '';
                         
                         if (projeOrj && ogrenci) {
-                            // "Akıllı Ev Projesi" ile "akıllı ev projesi" aynı sayılsın diye filtre
-                            const groupKey = projeOrj.toLocaleLowerCase('tr-TR').replace(/[\s\.\-\/\_]/g, '');
-                            
-                            // Eğer bu proje adı daha önce sistemde varsa atla
+                            const groupKey = normalizeProjectName(projeOrj);
                             if(existingKeys.has(groupKey)) return;
 
-                            // Öğrencileri aynı proje adı altında birleştir
                             if (projelerMap.has(groupKey)) {
                                 projelerMap.get(groupKey).ogrenciler.push(ogrenci);
                             } else {
-                                projelerMap.set(groupKey, { proje_adi: projeOrj, ogrenciler: [ogrenci] });
+                                projelerMap.set(groupKey, { proje_adi: temizleBaslik(projeOrj), ogrenciler: [ogrenci] });
                             }
                         }
                     }
@@ -249,7 +238,7 @@
 
                 if(projelerMap.size === 0) {
                     resetImportBtn();
-                    return Swal.fire('Uyarı', 'Tablodaki tüm projeler zaten sistemde kayıtlı veya uygun başlık bulunamadı (Adınız/Konusu).', 'info');
+                    return Swal.fire('Uyarı', 'Tablodaki tüm projeler zaten sistemde kayıtlı veya uygun başlık bulunamadı.', 'info');
                 }
 
                 try {
@@ -257,10 +246,10 @@
                     let eklenenSayi = 0;
                     
                     for (let [key, pData] of projelerMap) {
-                        const ogrenciMetni = pData.ogrenciler.join(", "); // Aynı projedeki öğrencileri virgülle ayır
+                        const ogrenciMetni = pData.ogrenciler.join(", "); 
                         await addDoc(collection(db, "projeler"), {
                             proje_adi: pData.proje_adi,
-                            grup_adi: "", // Şimdilik boş kalsın istendi
+                            grup_adi: "",
                             ogrenci_adi: ogrenciMetni,
                             toplam_ham_puan: 0,
                             toplam_oy_sayisi: 0,
@@ -270,39 +259,43 @@
                     }
 
                     document.getElementById('sheetCsvLink').value = "";
-                    Swal.fire('Başarılı', `${eklenenSayi} adet benzersiz proje başarıyla sisteme aktarıldı ve öğrenciler gruplandırıldı.`, 'success');
+                    Swal.fire('Başarılı', `${eklenenSayi} adet proje zeki algoritma ile birleştirilerek başarıyla sisteme aktarıldı.`, 'success');
                     projeleriGetir();
                 } catch (e) {
-                    console.error(e);
                     Swal.fire('Hata', 'Veritabanına ekleme sırasında bir hata oluştu.', 'error');
-                } finally {
-                    resetImportBtn();
-                }
+                } finally { resetImportBtn(); }
             },
-            error: function(err) {
-                console.error(err);
-                resetImportBtn();
-                Swal.fire('Hata', 'Bağlantı kurulamadı. Google Tablonun "Web\'de Yayınlanmış" olduğundan emin olun.', 'error');
-            }
+            error: function(err) { resetImportBtn(); Swal.fire('Hata', 'Bağlantı kurulamadı.', 'error'); }
         });
     });
+
+    function normalizeProjectName(text) {
+        if(!text) return "";
+        let t = text.toLocaleLowerCase('tr-TR');
+        t = t.replace(/\(.*?\)/g, '');
+        t = t.split('-')[0].split('/')[0].split(',')[0];
+        let kelimeler = t.trim().split(/\s+/);
+        if(kelimeler.length > 0) {
+            const anahtar = kelimeler[0];
+            if (anahtar.length >= 4) { return anahtar.substring(0, 7); }
+        }
+        return t.replace(/[^a-z0-9ğüşıöç]/g, '').trim();
+    }
+
+    function temizleBaslik(text) {
+        if(!text) return "";
+        let t = text.replace(/\(.*\)/g, '').split('-')[0].trim();
+        return t.charAt(0).toLocaleUpperCase('tr-TR') + t.slice(1).toLocaleLowerCase('tr-TR');
+    }
 
     function resetImportBtn() {
         document.getElementById('importSheetBtn').disabled = false;
         document.getElementById('importSheetBtn').innerText = "Verileri Çek ve Aktar";
     }
 
-    // OTURUM KONTROLÜ
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            loginSection.style.display = 'none';
-            adminPanel.style.display = 'block';
-            ayarlariGetir();
-            projeleriGetir();
-        } else {
-            loginSection.style.display = 'block';
-            adminPanel.style.display = 'none';
-        }
+        if (user) { loginSection.style.display = 'none'; adminPanel.style.display = 'block'; ayarlariGetir(); projeleriGetir(); } 
+        else { loginSection.style.display = 'block'; adminPanel.style.display = 'none'; }
     });
 
     document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -314,11 +307,9 @@
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        Swal.fire({ title: 'Çıkış Yapılıyor', text: "Oturumu kapatmak istediğinize emin misiniz?", icon: 'question', showCancelButton: true, confirmButtonText: 'Evet, Kapat', cancelButtonText: 'İptal'
-        }).then((result) => { if (result.isConfirmed) signOut(auth); });
+        Swal.fire({ title: 'Çıkış Yapılıyor', text: "Oturumu kapatmak istediğinize emin misiniz?", icon: 'question', showCancelButton: true, confirmButtonText: 'Evet, Kapat', cancelButtonText: 'İptal' }).then((result) => { if (result.isConfirmed) signOut(auth); });
     });
 
-    // EXCEL (CSV) ÇIKTISI
     document.getElementById('exportBtn').addEventListener('click', async () => {
         try {
             const q = query(collection(db, "projeler"), orderBy("toplam_ham_puan", "desc"));
@@ -328,101 +319,120 @@
             let sira = 1;
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
-                const toplamOy = data.toplam_oy_sayisi || 0;
-                const toplamPuan = data.toplam_ham_puan || 0;
+                const toplamOy = data.toplam_oy_sayisi || 0; const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
-                const proje = `"${(data.proje_adi || "").replace(/"/g, '""')}"`;
-                const grup = `"${(data.grup_adi || "").replace(/"/g, '""')}"`;
-                const ogrenci = `"${(data.ogrenci_adi || "").replace(/"/g, '""')}"`;
-                csvContent += `${sira},${proje},${grup},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`;
-                sira++;
+                const proje = `"${(data.proje_adi || "").replace(/"/g, '""')}"`; const grup = `"${(data.grup_adi || "").replace(/"/g, '""')}"`; const ogrenci = `"${(data.ogrenci_adi || "").replace(/"/g, '""')}"`;
+                csvContent += `${sira},${proje},${grup},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`; sira++;
             });
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "bilim_senligi_sonuclari.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (e) { Swal.fire('Hata', 'Veriler dışa aktarılırken bir sorun oluştu.', 'error'); }
+            const encodedUri = encodeURI(csvContent); const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "bilim_senligi_sonuclari.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } catch (e) { Swal.fire('Hata', 'Dışa aktarılırken sorun oluştu.', 'error'); }
     });
 
-    // PROJE SİL
     window.projeSil = async function(id) {
-        Swal.fire({ title: 'Emin misiniz?', text: "Bu proje silinecek ve kayıtlı olan TÜM OYLAR kaybolacaktır!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Evet, Kalıcı Olarak Sil', cancelButtonText: 'İptal'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try { await deleteDoc(doc(db, "projeler", id)); Swal.fire('Silindi!', 'Proje kaldırıldı.', 'success'); projeleriGetir(); } 
-                catch (e) { Swal.fire('Hata!', 'Yetkinizi kontrol edin.', 'error'); }
-            }
+        Swal.fire({ title: 'Emin misiniz?', text: "Bu proje ve TÜM OYLARI silinecek!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Evet, Sil', cancelButtonText: 'İptal' }).then(async (result) => {
+            if (result.isConfirmed) { try { await deleteDoc(doc(db, "projeler", id)); Swal.fire('Silindi!', '', 'success'); projeleriGetir(); } catch (e) { Swal.fire('Hata!', '', 'error'); } }
         });
     }
 
-    // PROJE DÜZENLE
-    window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutOgrenci) {
-        const { value: formValues } = await Swal.fire({
-            title: 'Projeyi Düzenle',
-            html: `<input id="swal-input1" class="swal2-input" placeholder="Proje Adı" value="${mevcutAdi}">` +
-                  `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` +
-                  `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri" value="${mevcutOgrenci}">`,
-            focusConfirm: false, showCancelButton: true, confirmButtonText: 'Güncelle', cancelButtonText: 'İptal',
-            preConfirm: () => [ document.getElementById('swal-input1').value.trim(), document.getElementById('swal-input2').value.trim(), document.getElementById('swal-input3').value.trim() ]
-        });
+    // --- TOPLU SİLME VE SEÇİM İŞLEMLERİ ---
+    let allSelected = false;
+    document.getElementById('selectAllBtn').addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('.project-checkbox');
+        allSelected = !allSelected;
+        checkboxes.forEach(cb => cb.checked = allSelected);
+        document.getElementById('selectAllBtn').innerText = allSelected ? "Seçimi Temizle" : "Tümünü Seç";
+        toggleBulkDeleteBtn();
+    });
 
-        if (formValues) {
-            const [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
-            if (!yeniProjeAdi || !yeniOgrenciAdi) return Swal.fire('Hata', 'Proje ve Öğrenci alanları zorunludur.', 'error');
-            try {
-                await updateDoc(doc(db, "projeler", id), { proje_adi: yeniProjeAdi, grup_adi: yeniGrupAdi, ogrenci_adi: yeniOgrenciAdi });
-                Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false });
-                projeleriGetir();
-            } catch (error) { Swal.fire('Hata', 'Güncelleme işlemi başarısız oldu.', 'error'); }
+    document.getElementById('projeListesi').addEventListener('change', (e) => {
+        if(e.target.classList.contains('project-checkbox')) {
+            toggleBulkDeleteBtn();
+        }
+    });
+
+    function toggleBulkDeleteBtn() {
+        const checkedCount = document.querySelectorAll('.project-checkbox:checked').length;
+        const bulkBtn = document.getElementById('bulkDeleteBtn');
+        if(checkedCount > 0) {
+            bulkBtn.style.display = 'inline-block';
+            bulkBtn.innerText = `Seçilenleri Sil (${checkedCount})`;
+        } else {
+            bulkBtn.style.display = 'none';
+            allSelected = false;
+            document.getElementById('selectAllBtn').innerText = "Tümünü Seç";
         }
     }
 
-    // MASA İSİMLİĞİ YAZDIR
+    document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
+        const checkedBoxes = document.querySelectorAll('.project-checkbox:checked');
+        if(checkedBoxes.length === 0) return;
+
+        Swal.fire({
+            title: 'Toplu Silme İşlemi',
+            text: `Seçilen ${checkedBoxes.length} proje ve bu projelere ait TÜM OYLAR kalıcı olarak silinecektir. Onaylıyor musunuz?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Evet, Hepsini Sil',
+            cancelButtonText: 'İptal'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Siliniyor...', text: 'Lütfen bekleyin', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+                try {
+                    for(const cb of checkedBoxes) {
+                        await deleteDoc(doc(db, "projeler", cb.value));
+                    }
+                    Swal.fire('Başarılı!', `${checkedBoxes.length} adet proje başarıyla silindi.`, 'success');
+                    projeleriGetir();
+                } catch (e) {
+                    Swal.fire('Hata!', 'Toplu silme işlemi sırasında bir sorun oluştu.', 'error');
+                }
+            }
+        });
+    });
+    // -------------------------------------
+
+    window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutOgrenci) {
+        const { value: formValues } = await Swal.fire({
+            title: 'Projeyi Düzenle',
+            html: `<input id="swal-input1" class="swal2-input" placeholder="Proje Adı" value="${mevcutAdi}">` + `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` + `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri" value="${mevcutOgrenci}">`,
+            focusConfirm: false, showCancelButton: true, confirmButtonText: 'Güncelle', cancelButtonText: 'İptal',
+            preConfirm: () => [ document.getElementById('swal-input1').value.trim(), document.getElementById('swal-input2').value.trim(), document.getElementById('swal-input3').value.trim() ]
+        });
+        if (formValues) {
+            const [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
+            if (!yeniProjeAdi || !yeniOgrenciAdi) return Swal.fire('Hata', 'Boş bırakılamaz.', 'error');
+            try { await updateDoc(doc(db, "projeler", id), { proje_adi: yeniProjeAdi, grup_adi: yeniGrupAdi, ogrenci_adi: yeniOgrenciAdi }); Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false }); projeleriGetir(); } catch (error) { Swal.fire('Hata', '', 'error'); }
+        }
+    }
+
     window.masaIsimligiYazdir = function(projeAdi, grupAdi, ogrenciAdi, id) {
-        const printArea = document.getElementById('printArea');
-        const oylamaLinki = getOylamaUrl(id);
-        
-        printArea.innerHTML = `
-            <div class="print-half print-top-half">
-                <div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div>
-                <div class="print-qr-container" id="qr-top"></div>
-            </div>
-            <div class="print-half print-bottom-half">
-                <div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div>
-                <div class="print-qr-container" id="qr-bottom"></div>
-            </div>
-        `;
+        const printArea = document.getElementById('printArea'); const oylamaLinki = getOylamaUrl(id);
+        printArea.innerHTML = `<div class="print-half print-top-half"><div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div><div class="print-qr-container" id="qr-top"></div></div><div class="print-half print-bottom-half"><div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div><div class="print-qr-container" id="qr-bottom"></div></div>`;
         new QRCode(document.getElementById("qr-top"), { text: oylamaLinki, width: 256, height: 256, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H });
         new QRCode(document.getElementById("qr-bottom"), { text: oylamaLinki, width: 256, height: 256, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H });
         setTimeout(() => { window.print(); }, 300);
     }
 
-    // PROJELERİ GETİR
     async function projeleriGetir() {
-        const projeListesi = document.getElementById('projeListesi');
-        projeListesi.innerHTML = "<p><em>Veriler veritabanından çekiliyor...</em></p>";
-        
+        const projeListesi = document.getElementById('projeListesi'); projeListesi.innerHTML = "<p><em>Veriler çekiliyor...</em></p>";
+        // Listeyi yenilerken "Tümünü Seç" durumu ve toplu sil butonunu gizle
+        toggleBulkDeleteBtn(); 
         try {
-            const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc"));
-            const querySnapshot = await getDocs(q);
+            const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc")); const querySnapshot = await getDocs(q);
             let htmlStr = ""; let qrData = []; 
-            if (querySnapshot.empty) return projeListesi.innerHTML = "<p>Henüz sisteme kayıtlı bir stant bulunmuyor.</p>";
-
+            if (querySnapshot.empty) return projeListesi.innerHTML = "<p>Henüz sistemde stant yok.</p>";
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data(); const id = docSnap.id;
                 const toplamOy = data.toplam_oy_sayisi || 0; const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
-                
-                const safeProje = (data.proje_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                const safeGrup = (data.grup_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                const safeOgrenci = (data.ogrenci_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-
+                const safeProje = (data.proje_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); const safeGrup = (data.grup_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); const safeOgrenci = (data.ogrenci_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
                 qrData.push({ id: id, link: getOylamaUrl(id) });
+                
+                // YENİ: Kartın içine checkbox eklendi
                 htmlStr += `
                     <div class="project-card">
+                        <input type="checkbox" class="project-checkbox no-print" value="${id}">
                         <div>
                             <h3>${data.proje_adi}</h3>
                             <div class="grup-title">${data.grup_adi || "-"}</div>
@@ -434,32 +444,26 @@
                             <div id="qr-${id}" class="qr-container"></div>
                         </div>
                         <div class="card-actions no-print">
-                            <button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeOgrenci}')">Projeyi Düzenle</button>
+                            <button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeOgrenci}')">Düzenle</button>
                             <button class="btn-primary" onclick="masaIsimligiYazdir('${safeProje}', '${safeGrup}', '${safeOgrenci}', '${id}')">Masa İsimliği Yazdır</button>
-                            <button class="btn-danger" onclick="projeSil('${id}')">Projeyi Sil</button>
+                            <button class="btn-danger" onclick="projeSil('${id}')">Sil</button>
                         </div>
                     </div>`;
             });
             projeListesi.innerHTML = htmlStr;
             qrData.forEach(item => { new QRCode(document.getElementById(`qr-${item.id}`), { text: item.link, width: 140, height: 140, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H }); });
-        } catch (e) { projeListesi.innerHTML = "<p style='color:red;'>Veriler alınırken bir hata oluştu.</p>"; }
+        } catch (e) { projeListesi.innerHTML = "<p style='color:red;'>Hata oluştu.</p>"; }
     }
 
-    // YENİ PROJE EKLE (Tekil)
     document.getElementById('ekleBtn').addEventListener('click', async () => {
-        const pAdi = document.getElementById('projeAdi').value.trim();
-        const gAdi = document.getElementById('grupAdi').value.trim();
-        const oAdi = document.getElementById('ogrenciAdi').value.trim();
-        if (!pAdi || !oAdi) return Swal.fire('Eksik Bilgi', 'Lütfen proje adını ve öğrenci isimlerini doldurun.', 'info');
-
+        const pAdi = document.getElementById('projeAdi').value.trim(); const gAdi = document.getElementById('grupAdi').value.trim(); const oAdi = document.getElementById('ogrenciAdi').value.trim();
+        if (!pAdi || !oAdi) return Swal.fire('Eksik Bilgi', 'Proje adı ve öğrenci isimleri zorunludur.', 'info');
         document.getElementById('ekleBtn').disabled = true; document.getElementById('ekleBtn').innerText = "Ekleniyor...";
         try {
             await addDoc(collection(db, "projeler"), { proje_adi: pAdi, grup_adi: gAdi, ogrenci_adi: oAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() });
             document.getElementById('projeAdi').value = ""; document.getElementById('grupAdi').value = ""; document.getElementById('ogrenciAdi').value = "";
-            Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje sisteme eklendi.', timer: 2000, showConfirmButton: false });
-            projeleriGetir();
-        } catch (e) { Swal.fire('Hata', 'Proje eklenirken bir sorun oluştu.', 'error'); } 
-        finally { document.getElementById('ekleBtn').disabled = false; document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret"; }
+            Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje eklendi.', timer: 2000, showConfirmButton: false }); projeleriGetir();
+        } catch (e) { Swal.fire('Hata', 'Sorun oluştu.', 'error'); } finally { document.getElementById('ekleBtn').disabled = false; document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret"; }
     });
 </script>
 </body>
