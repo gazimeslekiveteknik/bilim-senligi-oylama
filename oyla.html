@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1255,27 +1254,39 @@
             btnSubmit.textContent = `${value} Puan ile Oyla`;
         }
 
-        // ── Geliştirilmiş Dinamik Anti-Hile Oylama Takibi ──
+        // ── GEÇMİŞ OYLARI UNUTMAYAN ALGORİTMA (6 AYLIK ÇEREZ) ──
         function getDurum() {
             const bugun = new Date().toLocaleDateString('tr-TR');
             
-            let durumLocal = JSON.parse(localStorage.getItem('senlikOylama'));
-            let durumSession = JSON.parse(sessionStorage.getItem('senlikOylama'));
+            // Tüm hafıza noktalarını çek
+            let durumLocal = JSON.parse(localStorage.getItem('senlikOylama')) || {};
+            let durumSession = JSON.parse(sessionStorage.getItem('senlikOylama')) || {};
             let cookieMatch = document.cookie.match(new RegExp('(^| )senlikOylama=([^;]+)'));
-            let durumCookie = cookieMatch ? JSON.parse(decodeURIComponent(cookieMatch[2])) : null;
+            let durumCookie = cookieMatch ? JSON.parse(decodeURIComponent(cookieMatch[2])) : {};
 
-            let durumlar = [durumLocal, durumSession, durumCookie].filter(d => d && d.tarih === bugun);
-            
-            let gecerliDurum;
-            if (durumlar.length > 0) {
-                // Güvenlik: Kötü niyetle 1 logu sildiyse bile en kalabalık dizi hangisiyse gerçeği o yansıtır.
-                gecerliDurum = durumlar.reduce((max, cur) => (cur.oylananlar || []).length > (max.oylananlar || []).length ? cur : max);
-            } else {
-                gecerliDurum = { tarih: bugun, oylananlar: [] };
+            // 1. Ömür Boyu Hafıza (Tüm oylanmış projeleri birleştir ve tekilleştir)
+            let tumGecmisOylar = new Set([
+                ...(durumLocal.tumOylananlar || []),
+                ...(durumSession.tumOylananlar || []),
+                ...(durumCookie.tumOylananlar || []),
+                // Eski sistemden kalan verileri de kaybetmemek için entegre edelim
+                ...(durumLocal.oylananlar || []),
+                ...(durumCookie.oylananlar || [])
+            ]);
+
+            // 2. Sadece BUGÜN kullanılan oy hakkını bul
+            let gunlukler = [durumLocal, durumSession, durumCookie].filter(d => d.tarih === bugun);
+            let bugunKullanilan = 0;
+            if (gunlukler.length > 0) {
+                // Manipülasyona karşı en yüksek kullanılan rakamı doğru kabul et
+                bugunKullanilan = Math.max(...gunlukler.map(d => d.gunlukKullanilan || (d.oylananlar ? d.oylananlar.length : 0)));
             }
 
-            // Eğer eski formatta (kalanHak ile) geldiyse oylananlar array'ini garantiye al
-            if(!gecerliDurum.oylananlar) gecerliDurum.oylananlar = [];
+            let gecerliDurum = {
+                tarih: bugun,
+                gunlukKullanilan: bugunKullanilan,
+                tumOylananlar: Array.from(tumGecmisOylar) // Asla sıfırlanmayan liste
+            };
 
             durumGuncelle(gecerliDurum);
             return gecerliDurum;
@@ -1285,20 +1296,20 @@
             const str = JSON.stringify(yeniDurum);
             localStorage.setItem('senlikOylama', str);
             sessionStorage.setItem('senlikOylama', str);
+            
+            // Cookie ömrü 6 Ay (180 Gün) olarak güncellendi.
             const simdi = new Date();
-            const geceYarisi = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate() + 1, 0, 0, 0);
-            document.cookie = `senlikOylama=${encodeURIComponent(str)}; expires=${geceYarisi.toUTCString()}; path=/`;
+            const bitis = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate() + 180);
+            document.cookie = `senlikOylama=${encodeURIComponent(str)}; expires=${bitis.toUTCString()}; path=/`;
         }
 
-        // ── Dinamik Bar ve Noktalar ──
         function updateProgressUI(durum) {
-            const kullanilanOy = durum.oylananlar.length;
+            const kullanilanOy = durum.gunlukKullanilan; // Artık geçmişe değil, sadece bugünkü sayaca bakıyoruz
             voteCountDisplay.textContent = `${kullanilanOy} / ${globalOyLimiti}`;
 
             const pct = Math.min((kullanilanOy / globalOyLimiti) * 100, 100);
             setTimeout(() => { progressFill.style.width = pct + '%'; }, 300);
 
-            // Ayarlanan limite göre alttaki ilerleme toplarını (dots) dinamik bas
             const dotsContainer = document.querySelector('.progress-bar__dots');
             dotsContainer.innerHTML = '';
             for (let i = 0; i < globalOyLimiti; i++) {
@@ -1309,7 +1320,6 @@
             }
         }
 
-        // ── Show Messages ──
         function showMessage(type, title, text, kullanilanSayisi = null) {
             messageOverlay.className = `message-overlay message-overlay--${type}`;
             messageBox.className = `message-box message-box--${type}`;
@@ -1319,7 +1329,7 @@
 
             if (kullanilanSayisi !== null) {
                 messageRemaining.style.display = 'inline-block';
-                messageRemaining.textContent = `Kullanılan oy: ${kullanilanSayisi} / ${globalOyLimiti}`;
+                messageRemaining.textContent = `Bugün kullanılan oy: ${kullanilanSayisi} / ${globalOyLimiti}`;
             } else {
                 messageRemaining.style.display = 'none';
             }
@@ -1329,16 +1339,13 @@
             if (type === 'success') { launchConfetti(); }
         }
 
-        // ── Ana Başlatma ve Yükleme ──
         async function baslat() {
-            // Önce yöneticinin belirlediği güncel limiti veritabanından çek (sayfa açılmadan barın düzgün dolması için)
             try {
                 const ayarSnap = await getDoc(doc(db, "ayarlar", "genel"));
                 if (ayarSnap.exists() && ayarSnap.data().gunlukOyHakki) {
                     globalOyLimiti = ayarSnap.data().gunlukOyHakki;
                 }
-            } catch (e) { console.warn("Limit çekilemedi, varsayılan (2) kullanılacak."); }
-
+            } catch (e) { console.warn("Limit çekilemedi, varsayılan kullanılacak."); }
             await projeyiYukle();
         }
 
@@ -1348,12 +1355,14 @@
             const durum = getDurum();
             updateProgressUI(durum);
 
-            if (durum.oylananlar.length >= globalOyLimiti) {
-                return showMessage('error', 'Oy Hakkınız Bitti', `Bugünkü tüm oy haklarınızı (${globalOyLimiti}/${globalOyLimiti}) kullandınız. Yarın tekrar bekleriz!`);
+            // 1. KONTROL: Daha Önce Oy Vermiş mi? (Gün fark etmez)
+            if (durum.tumOylananlar.includes(projeId)) {
+                return showMessage('error', 'Zaten Oyladınız', 'Bu projeye geçmişte veya bugün zaten oy verdiniz. Farklı projeleri keşfedin!', durum.gunlukKullanilan);
             }
 
-            if (durum.oylananlar.includes(projeId)) {
-                return showMessage('error', 'Zaten Oyladınız', 'Bu projeye zaten oy verdiniz. Lütfen farklı projeleri keşfedin!', durum.oylananlar.length);
+            // 2. KONTROL: Günlük Limiti Dolmuş mu?
+            if (durum.gunlukKullanilan >= globalOyLimiti) {
+                return showMessage('error', 'Oy Hakkınız Bitti', `Bugünkü tüm oy haklarınızı (${globalOyLimiti}/${globalOyLimiti}) kullandınız. Yarın tekrar bekleriz!`);
             }
 
             try {
@@ -1362,8 +1371,6 @@
 
                 if (projeSnap.exists()) {
                     projeBaslik.textContent = projeSnap.data().proje_adi;
-                    
-                    // index.html'e eklediğimiz "grup_adi" değişkenini oylama sayfasında da gösterelim
                     const grupMetni = projeSnap.data().grup_adi ? (projeSnap.data().grup_adi + " - ") : "";
                     ogrenciAdi.textContent = grupMetni + projeSnap.data().ogrenci_adi;
                     
@@ -1376,12 +1383,11 @@
             } catch (error) { showMessage('error', 'Bağlantı Hatası', 'İnternet bağlantınızı kontrol edip tekrar deneyin.'); }
         }
 
-        // ── Submit Vote ──
         btnSubmit.addEventListener('click', async (e) => {
             if (selectedRating === 0) return;
 
             const durum = getDurum();
-            if (durum.oylananlar.length >= globalOyLimiti || durum.oylananlar.includes(projeId)) return;
+            if (durum.gunlukKullanilan >= globalOyLimiti || durum.tumOylananlar.includes(projeId)) return;
 
             // Ripple effect
             const rect = btnSubmit.getBoundingClientRect();
@@ -1405,16 +1411,16 @@
                     toplam_oy_sayisi: increment(1)
                 });
 
-                // Update local state (Dinamik array yapısı)
-                durum.oylananlar.push(projeId);
+                // Ömür boyu listeye projeyi ekle ve günlük sayacı artır
+                durum.tumOylananlar.push(projeId);
+                durum.gunlukKullanilan += 1;
                 durumGuncelle(durum);
 
                 loaderContainer.classList.remove('visible');
                 updateProgressUI(durum);
-                showMessage('success', 'Oyunuz Kaydedildi!', `${selectedRating} puan başarıyla verildi. Teşekkür ederiz!`, durum.oylananlar.length);
+                showMessage('success', 'Oyunuz Kaydedildi!', `${selectedRating} puan başarıyla verildi. Teşekkür ederiz!`, durum.gunlukKullanilan);
 
             } catch (error) {
-                console.error("Oy verme hatası:", error);
                 loaderContainer.classList.remove('visible');
                 projectCard.style.display = 'block';
                 ratingSection.style.display = 'block';
@@ -1426,69 +1432,31 @@
 
         // ── Confetti Effect ──
         function launchConfetti() {
-            const canvas = document.getElementById('confettiCanvas'); 
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth; 
-            canvas.height = window.innerHeight;
-            
+            const canvas = document.getElementById('confettiCanvas'); const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             const colors = ['#ffd700', '#ff6b6b', '#3b82f6', '#22c55e', '#f59e0b', '#e30a17', '#ffffff'];
             const particles = [];
-            
             for (let i = 0; i < 120; i++) {
                 particles.push({
-                    x: canvas.width / 2 + (Math.random() - 0.5) * 100, 
-                    y: canvas.height / 2, 
-                    vx: (Math.random() - 0.5) * 16, 
-                    vy: (Math.random() - 1) * 18 - 4,
-                    color: colors[Math.floor(Math.random() * colors.length)], 
-                    size: Math.random() * 8 + 3, 
-                    rotation: Math.random() * 360, 
-                    rotSpeed: (Math.random() - 0.5) * 12, 
-                    gravity: 0.3, 
-                    opacity: 1, 
-                    shape: Math.random() > 0.5 ? 'rect' : 'circle'
+                    x: canvas.width / 2 + (Math.random() - 0.5) * 100, y: canvas.height / 2, vx: (Math.random() - 0.5) * 16, vy: (Math.random() - 1) * 18 - 4,
+                    color: colors[Math.floor(Math.random() * colors.length)], size: Math.random() * 8 + 3, rotation: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 12, gravity: 0.3, opacity: 1, shape: Math.random() > 0.5 ? 'rect' : 'circle'
                 });
             }
-            
             let frame = 0;
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 particles.forEach(p => {
-                    p.vy += p.gravity; 
-                    p.x += p.vx; 
-                    p.y += p.vy; 
-                    p.rotation += p.rotSpeed; 
-                    p.opacity -= 0.008;
-                    
+                    p.vy += p.gravity; p.x += p.vx; p.y += p.vy; p.rotation += p.rotSpeed; p.opacity -= 0.008;
                     if (p.opacity <= 0) return;
-                    
-                    ctx.save(); 
-                    ctx.translate(p.x, p.y); 
-                    ctx.rotate((p.rotation * Math.PI) / 180); 
-                    ctx.globalAlpha = Math.max(0, p.opacity); 
-                    ctx.fillStyle = p.color;
-                    
-                    if (p.shape === 'rect') { 
-                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6); 
-                    } else { 
-                        ctx.beginPath(); 
-                        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); 
-                        ctx.fill(); 
-                    }
+                    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate((p.rotation * Math.PI) / 180); ctx.globalAlpha = Math.max(0, p.opacity); ctx.fillStyle = p.color;
+                    if (p.shape === 'rect') { ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6); } else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill(); }
                     ctx.restore();
                 });
-                
-                frame++; 
-                if (frame < 180) { 
-                    requestAnimationFrame(animate); 
-                } else { 
-                    ctx.clearRect(0, 0, canvas.width, canvas.height); 
-                }
+                frame++; if (frame < 180) { requestAnimationFrame(animate); } else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
             }
             animate();
         }
 
-        // ── Sistemi Başlat ──
         baslat();
     </script>
 </body>
