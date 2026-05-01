@@ -1,6 +1,4 @@
-// ... [oyla.html içerisindeki HTML ve CSS kısımları tamamen aynı kalacak, sadece script etiketinin içi güncellenecektir] ...
-
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
@@ -18,15 +16,15 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // URL params
+        // URL params ve Global Değişkenler
         const urlParams = new URLSearchParams(window.location.search);
         const projeId = urlParams.get('id');
+        let globalOyLimiti = 2; // Başlangıç varsayılanı (Veritabanından ezilecek)
+        let selectedRating = 0;
 
         // DOM references
         const voteCountDisplay = document.getElementById('voteCountDisplay');
         const progressFill = document.getElementById('progressFill');
-        const dot1 = document.getElementById('dot1');
-        const dot2 = document.getElementById('dot2');
         const projectCard = document.getElementById('projectCard');
         const projeBaslik = document.getElementById('projeBaslik');
         const ogrenciAdi = document.getElementById('ogrenciAdi');
@@ -42,16 +40,8 @@
         const messageText = document.getElementById('messageText');
         const messageRemaining = document.getElementById('messageRemaining');
 
-        let selectedRating = 0;
-
         // ── Rating Labels ──
-        const ratingLabels = {
-            1: '⭐ Fena Değil',
-            2: '⭐⭐ İyi',
-            3: '⭐⭐⭐ Güzel',
-            4: '⭐⭐⭐⭐ Harika',
-            5: '⭐⭐⭐⭐⭐ Muhteşem!'
-        };
+        const ratingLabels = { 1: '⭐ Fena Değil', 2: '⭐⭐ İyi', 3: '⭐⭐⭐ Güzel', 4: '⭐⭐⭐⭐ Harika', 5: '⭐⭐⭐⭐⭐ Muhteşem!' };
 
         // ── Generate Stars ──
         function createStars() {
@@ -61,20 +51,14 @@
                 starEl.dataset.value = i;
                 starEl.innerHTML = `
                     <div class="star-glow"></div>
-                    <span class="sparkle"></span>
-                    <span class="sparkle"></span>
-                    <span class="sparkle"></span>
-                    <span class="sparkle"></span>
+                    <span class="sparkle"></span><span class="sparkle"></span><span class="sparkle"></span><span class="sparkle"></span>
                     <svg viewBox="0 0 51 48" xmlns="http://www.w3.org/2000/svg">
                         <path class="star-fill" d="M25.5 1.5L31.9 17.9L49.5 19.5L36 31.2L39.8 48L25.5 39.3L11.2 48L15 31.2L1.5 19.5L19.1 17.9L25.5 1.5Z"/>
                     </svg>
                 `;
-
-                // Touch/click events
                 starEl.addEventListener('click', () => selectStar(i));
                 starEl.addEventListener('mouseenter', () => previewStars(i));
                 starEl.addEventListener('mouseleave', () => previewStars(0));
-
                 starsContainer.appendChild(starEl);
             }
         }
@@ -82,156 +66,124 @@
         function previewStars(upTo) {
             const stars = starsContainer.querySelectorAll('.star');
             stars.forEach((star, index) => {
-                if (index < upTo && !star.classList.contains('selected')) {
-                    star.classList.add('preview');
-                } else {
-                    star.classList.remove('preview');
-                }
+                if (index < upTo && !star.classList.contains('selected')) { star.classList.add('preview'); } 
+                else { star.classList.remove('preview'); }
             });
         }
 
         function selectStar(value) {
             selectedRating = value;
             const stars = starsContainer.querySelectorAll('.star');
-
             stars.forEach((star, index) => {
                 star.classList.remove('selected', 'preview');
-                if (index < value) {
-                    // Small stagger for selection animation
-                    setTimeout(() => {
-                        star.classList.add('selected');
-                    }, index * 60);
-                }
+                if (index < value) { setTimeout(() => { star.classList.add('selected'); }, index * 60); }
             });
-
-            // Update display
             ratingDisplay.textContent = ratingLabels[value];
             ratingDisplay.classList.add('active');
-
-            // Enable submit
             btnSubmit.disabled = false;
             btnSubmit.classList.add('ready');
             btnSubmit.textContent = `${value} Puan ile Oyla`;
         }
 
-        // ── Geliştirilmiş Anti-Hile Oylama Takibi ──
+        // ── Geliştirilmiş Dinamik Anti-Hile Oylama Takibi ──
         function getDurum() {
             const bugun = new Date().toLocaleDateString('tr-TR');
             
-            // 3 Farklı saklama alanını kontrol ediyoruz
             let durumLocal = JSON.parse(localStorage.getItem('senlikOylama'));
             let durumSession = JSON.parse(sessionStorage.getItem('senlikOylama'));
             let cookieMatch = document.cookie.match(new RegExp('(^| )senlikOylama=([^;]+)'));
             let durumCookie = cookieMatch ? JSON.parse(decodeURIComponent(cookieMatch[2])) : null;
 
-            // Bugüne ait geçerli kayıtları topluyoruz
             let durumlar = [durumLocal, durumSession, durumCookie].filter(d => d && d.tarih === bugun);
             
             let gecerliDurum;
             if (durumlar.length > 0) {
-                // Eğer farklı kayıtlar varsa, oyuncunun Kalan Hakkı EN AZ olanını doğru kabul ediyoruz 
-                // (Manipülasyon yapıp birini silmiş olsa bile diğeri onu yakalar)
-                gecerliDurum = durumlar.reduce((min, cur) => cur.kalanHak < min.kalanHak ? cur : min);
+                // Güvenlik: Kötü niyetle 1 logu sildiyse bile en kalabalık dizi hangisiyse gerçeği o yansıtır.
+                gecerliDurum = durumlar.reduce((max, cur) => (cur.oylananlar || []).length > (max.oylananlar || []).length ? cur : max);
             } else {
-                // Bugün ilk defa oy veriyor
-                gecerliDurum = { tarih: bugun, kalanHak: 2, oylananlar: [] };
+                gecerliDurum = { tarih: bugun, oylananlar: [] };
             }
 
-            // Olası bir senkronizasyon bozukluğuna karşı en güvenilir durumu hepsine tekrar yaz
+            // Eğer eski formatta (kalanHak ile) geldiyse oylananlar array'ini garantiye al
+            if(!gecerliDurum.oylananlar) gecerliDurum.oylananlar = [];
+
             durumGuncelle(gecerliDurum);
             return gecerliDurum;
         }
 
         function durumGuncelle(yeniDurum) {
             const str = JSON.stringify(yeniDurum);
-            
-            // 1. Tarayıcı önbelleği (Kalıcı)
             localStorage.setItem('senlikOylama', str);
-            
-            // 2. Sekme önbelleği (Gizli sekme koruması)
             sessionStorage.setItem('senlikOylama', str);
-            
-            // 3. Çerezler (Gece yarısına kadar geçerli - güçlü koruma)
             const simdi = new Date();
             const geceYarisi = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate() + 1, 0, 0, 0);
             document.cookie = `senlikOylama=${encodeURIComponent(str)}; expires=${geceYarisi.toUTCString()}; path=/`;
         }
 
-        // ── Update Progress UI ──
-        function updateProgressUI(kalanHak) {
-            const kullanilanOy = 2 - (kalanHak || 0);
-            voteCountDisplay.textContent = `${kullanilanOy} / 2`;
+        // ── Dinamik Bar ve Noktalar ──
+        function updateProgressUI(durum) {
+            const kullanilanOy = durum.oylananlar.length;
+            voteCountDisplay.textContent = `${kullanilanOy} / ${globalOyLimiti}`;
 
-            const pct = (kullanilanOy / 2) * 100;
-            setTimeout(() => {
-                progressFill.style.width = pct + '%';
-            }, 300);
+            const pct = Math.min((kullanilanOy / globalOyLimiti) * 100, 100);
+            setTimeout(() => { progressFill.style.width = pct + '%'; }, 300);
 
-            // Dots — dot lights up when that vote is USED
-            if (kullanilanOy >= 1) {
-                dot1.classList.add('active');
-                dot1.classList.remove('used');
-            } else {
-                dot1.classList.remove('active');
-                dot1.classList.add('used');
-            }
-
-            if (kullanilanOy >= 2) {
-                dot2.classList.add('active');
-                dot2.classList.remove('used');
-            } else {
-                dot2.classList.remove('active');
-                dot2.classList.add('used');
+            // Ayarlanan limite göre alttaki ilerleme toplarını (dots) dinamik bas
+            const dotsContainer = document.querySelector('.progress-bar__dots');
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < globalOyLimiti; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                if (i < kullanilanOy) { dot.classList.add('active'); }
+                dotsContainer.appendChild(dot);
             }
         }
 
         // ── Show Messages ──
-        function showMessage(type, title, text, kalanHak = null) {
-            // Set classes on both overlay and box for theming
+        function showMessage(type, title, text, kullanilanSayisi = null) {
             messageOverlay.className = `message-overlay message-overlay--${type}`;
             messageBox.className = `message-box message-box--${type}`;
             messageIcon.textContent = type === 'success' ? '🎉' : '⚠️';
             messageTitle.textContent = title;
             messageText.textContent = text;
 
-            if (kalanHak !== null) {
+            if (kullanilanSayisi !== null) {
                 messageRemaining.style.display = 'inline-block';
-                const kullanilan = 2 - (kalanHak || 0);
-                messageRemaining.textContent = `Kullanılan oy: ${kullanilan} / 2`;
+                messageRemaining.textContent = `Kullanılan oy: ${kullanilanSayisi} / ${globalOyLimiti}`;
             } else {
                 messageRemaining.style.display = 'none';
             }
 
-            // Re-trigger animations by forcing reflow
             void messageOverlay.offsetWidth;
             messageOverlay.classList.add('visible');
-
-            if (type === 'success') {
-                launchConfetti();
-            }
+            if (type === 'success') { launchConfetti(); }
         }
 
-        // ── Load Project ──
-        // Always update progress on page load
-        updateProgressUI(getDurum().kalanHak);
+        // ── Ana Başlatma ve Yükleme ──
+        async function baslat() {
+            // Önce yöneticinin belirlediği güncel limiti veritabanından çek (sayfa açılmadan barın düzgün dolması için)
+            try {
+                const ayarSnap = await getDoc(doc(db, "ayarlar", "genel"));
+                if (ayarSnap.exists() && ayarSnap.data().gunlukOyHakki) {
+                    globalOyLimiti = ayarSnap.data().gunlukOyHakki;
+                }
+            } catch (e) { console.warn("Limit çekilemedi, varsayılan (2) kullanılacak."); }
+
+            await projeyiYukle();
+        }
 
         async function projeyiYukle() {
-            if (!projeId) {
-                showMessage('error', 'Geçersiz QR Kod', 'Lütfen standdaki QR kodu tekrar okutun.');
-                return;
-            }
+            if (!projeId) { return showMessage('error', 'Geçersiz QR Kod', 'Lütfen standdaki QR kodu tekrar okutun.'); }
 
             const durum = getDurum();
-            updateProgressUI(durum.kalanHak);
+            updateProgressUI(durum);
 
-            if (durum.kalanHak <= 0) {
-                showMessage('error', 'Oy Hakkınız Bitti', 'Bugünkü tüm oy haklarınızı (2/2) kullandınız. Yarın tekrar bekleriz!');
-                return;
+            if (durum.oylananlar.length >= globalOyLimiti) {
+                return showMessage('error', 'Oy Hakkınız Bitti', `Bugünkü tüm oy haklarınızı (${globalOyLimiti}/${globalOyLimiti}) kullandınız. Yarın tekrar bekleriz!`);
             }
 
             if (durum.oylananlar.includes(projeId)) {
-                showMessage('error', 'Zaten Oyladınız', 'Bu projeye zaten oy verdiniz. Lütfen farklı projeleri keşfedin!', durum.kalanHak);
-                return;
+                return showMessage('error', 'Zaten Oyladınız', 'Bu projeye zaten oy verdiniz. Lütfen farklı projeleri keşfedin!', durum.oylananlar.length);
             }
 
             try {
@@ -240,16 +192,18 @@
 
                 if (projeSnap.exists()) {
                     projeBaslik.textContent = projeSnap.data().proje_adi;
-                    ogrenciAdi.textContent = projeSnap.data().ogrenci_adi;
+                    
+                    // index.html'e yeni eklediğimiz "grup_adi" değişkenini oylama sayfasında da gösterelim
+                    const grupMetni = projeSnap.data().grup_adi ? (projeSnap.data().grup_adi + " - ") : "";
+                    ogrenciAdi.textContent = grupMetni + projeSnap.data().ogrenci_adi;
+                    
                     projectCard.style.display = 'block';
                     ratingSection.style.display = 'block';
                     createStars();
                 } else {
                     showMessage('error', 'Proje Bulunamadı', 'Bu proje silinmiş veya yayından kaldırılmış olabilir.');
                 }
-            } catch (error) {
-                showMessage('error', 'Bağlantı Hatası', 'İnternet bağlantınızı kontrol edip tekrar deneyin.');
-            }
+            } catch (error) { showMessage('error', 'Bağlantı Hatası', 'İnternet bağlantınızı kontrol edip tekrar deneyin.'); }
         }
 
         // ── Submit Vote ──
@@ -257,7 +211,7 @@
             if (selectedRating === 0) return;
 
             const durum = getDurum();
-            if (durum.kalanHak <= 0 || durum.oylananlar.includes(projeId)) return;
+            if (durum.oylananlar.length >= globalOyLimiti || durum.oylananlar.includes(projeId)) return;
 
             // Ripple effect
             const rect = btnSubmit.getBoundingClientRect();
@@ -269,7 +223,6 @@
             btnSubmit.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
 
-            // Disable & show loader
             btnSubmit.disabled = true;
             projectCard.style.display = 'none';
             ratingSection.style.display = 'none';
@@ -282,14 +235,13 @@
                     toplam_oy_sayisi: increment(1)
                 });
 
-                // Update local state
-                durum.kalanHak -= 1;
+                // Update local state (Dinamik array yapısı)
                 durum.oylananlar.push(projeId);
                 durumGuncelle(durum);
 
                 loaderContainer.classList.remove('visible');
-                updateProgressUI(durum.kalanHak);
-                showMessage('success', 'Oyunuz Kaydedildi!', `${selectedRating} puan başarıyla verildi. Teşekkür ederiz!`, durum.kalanHak);
+                updateProgressUI(durum);
+                showMessage('success', 'Oyunuz Kaydedildi!', `${selectedRating} puan başarıyla verildi. Teşekkür ederiz!`, durum.oylananlar.length);
 
             } catch (error) {
                 console.error("Oy verme hatası:", error);
@@ -298,78 +250,37 @@
                 ratingSection.style.display = 'block';
                 btnSubmit.disabled = false;
                 showMessage('error', 'Bir Hata Oluştu', 'Oy verilirken sorun yaşandı. Lütfen tekrar deneyin.');
-                // Auto-close error after 3 seconds
                 setTimeout(() => messageOverlay.classList.remove('visible'), 3000);
             }
         });
 
-        // ── Confetti Effect ──
+        // ── Confetti Effect (Kısaltıldı) ──
         function launchConfetti() {
-            const canvas = document.getElementById('confettiCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
+            const canvas = document.getElementById('confettiCanvas'); const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             const colors = ['#ffd700', '#ff6b6b', '#3b82f6', '#22c55e', '#f59e0b', '#e30a17', '#ffffff'];
             const particles = [];
-
             for (let i = 0; i < 120; i++) {
                 particles.push({
-                    x: canvas.width / 2 + (Math.random() - 0.5) * 100,
-                    y: canvas.height / 2,
-                    vx: (Math.random() - 0.5) * 16,
-                    vy: (Math.random() - 1) * 18 - 4,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    size: Math.random() * 8 + 3,
-                    rotation: Math.random() * 360,
-                    rotSpeed: (Math.random() - 0.5) * 12,
-                    gravity: 0.3,
-                    opacity: 1,
-                    shape: Math.random() > 0.5 ? 'rect' : 'circle'
+                    x: canvas.width / 2 + (Math.random() - 0.5) * 100, y: canvas.height / 2, vx: (Math.random() - 0.5) * 16, vy: (Math.random() - 1) * 18 - 4,
+                    color: colors[Math.floor(Math.random() * colors.length)], size: Math.random() * 8 + 3, rotation: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 12, gravity: 0.3, opacity: 1, shape: Math.random() > 0.5 ? 'rect' : 'circle'
                 });
             }
-
             let frame = 0;
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
                 particles.forEach(p => {
-                    p.vy += p.gravity;
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.rotation += p.rotSpeed;
-                    p.opacity -= 0.008;
-
+                    p.vy += p.gravity; p.x += p.vx; p.y += p.vy; p.rotation += p.rotSpeed; p.opacity -= 0.008;
                     if (p.opacity <= 0) return;
-
-                    ctx.save();
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate((p.rotation * Math.PI) / 180);
-                    ctx.globalAlpha = Math.max(0, p.opacity);
-                    ctx.fillStyle = p.color;
-
-                    if (p.shape === 'rect') {
-                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-                    } else {
-                        ctx.beginPath();
-                        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-
+                    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate((p.rotation * Math.PI) / 180); ctx.globalAlpha = Math.max(0, p.opacity); ctx.fillStyle = p.color;
+                    if (p.shape === 'rect') { ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6); } else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill(); }
                     ctx.restore();
                 });
-
-                frame++;
-                if (frame < 180) {
-                    requestAnimationFrame(animate);
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
+                frame++; if (frame < 180) { requestAnimationFrame(animate); } else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
             }
-
             animate();
         }
 
-        // ── Init ──
-        projeyiYukle();
+        // ── Sistemi Başlat ──
+        baslat();
     </script>
