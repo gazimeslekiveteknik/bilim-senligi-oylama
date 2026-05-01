@@ -131,7 +131,7 @@
                 <h3 style="margin-top: 0; color: #383d41; font-size: 16px;">📥 Google Tablolardan Toplu İçe Aktarım</h3>
                 <p style="font-size: 13px; color: #555; margin-bottom: 15px;">
                     Google Form yanıtlarınızı sisteme topluca çekmek için, Google Tablonuzu açıp <strong>Dosya &gt; Paylaş &gt; Web'de Yayınla</strong> menüsünden <strong>"Virgülle ayrılmış değerler (.csv)"</strong> seçeneği ile yayınlayın.<br>
-                    <em>* Başarıyla aktarım yaptığınız link sistemde kalıcı olarak saklanacaktır. Öğrenci isimleri otomatik olarak "Ad SOYAD" formatına dönüştürülür.</em>
+                    <em>* Proje isimleri otomatik BÜYÜK HARFE, öğrenci isimleri ise "Ad SOYAD" formatına dönüştürülerek sisteme aktarılır.</em>
                 </p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="sheetCsvLink" placeholder="Google Tablolar CSV Yayın Linki (https://docs.google.com/spreadsheets/.../pub?output=csv)" style="margin-bottom: 0; flex: 1; min-width: 250px;">
@@ -217,10 +217,11 @@
         } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error'); }
     });
 
-    // YENİ: AD SOYAD FORMATLAMA FONKSİYONU
+    // --- YENİ: METİN FORMATLAMA FONKSİYONLARI ---
+    
+    // Öğrenci Adı Formatlama (Ahmet YILMAZ)
     function formatOgrenciAdi(metin) {
         if (!metin) return "";
-        // Virgül ile ayrılmış birden fazla isim varsa diye döngüye alıyoruz
         let isimler = metin.split(',').map(isim => {
             let parcalar = isim.trim().split(/\s+/);
             if (parcalar.length === 0 || parcalar[0] === "") return "";
@@ -228,14 +229,26 @@
                 let k = parcalar[0];
                 return k.charAt(0).toLocaleUpperCase('tr-TR') + k.slice(1).toLocaleLowerCase('tr-TR');
             }
-            // Son kelime soyad (TAMAMI BÜYÜK)
             let soyad = parcalar.pop().toLocaleUpperCase('tr-TR');
-            // Diğer kelimeler ad (İlk harf büyük, kalanı küçük)
             let adlar = parcalar.map(k => k.charAt(0).toLocaleUpperCase('tr-TR') + k.slice(1).toLocaleLowerCase('tr-TR'));
             return adlar.join(' ') + ' ' + soyad;
         });
         return isimler.filter(i => i !== "").join(', ');
     }
+
+    // Proje Adı Formatlama (TÜMÜ BÜYÜK HARF)
+    function formatProjeAdi(metin) {
+        if (!metin) return "";
+        return metin.toLocaleUpperCase('tr-TR');
+    }
+
+    // Tablolardan çekerken gereksiz parantez ve tireleri temizleyip büyük harfe çevirme
+    function temizleBaslik(text) {
+        if(!text) return "";
+        let t = text.replace(/\(.*\)/g, '').split('-')[0].trim();
+        return formatProjeAdi(t); // TAMAMI BÜYÜK HARF YAPILDI
+    }
+    // --------------------------------------------
 
     document.getElementById('importSheetBtn').addEventListener('click', async () => {
         const csvUrl = document.getElementById('sheetCsvLink').value.trim();
@@ -280,10 +293,9 @@
                         let projeOrj = row[projeCol] ? row[projeCol].trim() : '';
                         
                         if (projeOrj && ogrenci) {
-                            // FORMATLAMA FONKSİYONUNU UYGULA (Örn: ahmet yılmaz -> Ahmet YILMAZ)
                             ogrenci = formatOgrenciAdi(ogrenci);
-
                             const groupKey = normalizeProjectName(projeOrj);
+                            
                             if(existingKeys.has(groupKey)) return;
 
                             if (projelerMap.has(groupKey)) {
@@ -317,7 +329,7 @@
                         eklenenSayi++;
                     }
 
-                    Swal.fire('Başarılı', `${eklenenSayi} adet proje zeki algoritma ile birleştirilerek başarıyla sisteme aktarıldı.`, 'success');
+                    Swal.fire('Başarılı', `${eklenenSayi} adet proje zeki algoritma ile başarıyla sisteme aktarıldı.`, 'success');
                     projeleriGetir();
                 } catch (e) {
                     Swal.fire('Hata', 'Veritabanına ekleme sırasında bir hata oluştu.', 'error');
@@ -338,12 +350,6 @@
             if (anahtar.length >= 4) { return anahtar.substring(0, 7); }
         }
         return t.replace(/[^a-z0-9ğüşıöç]/g, '').trim();
-    }
-
-    function temizleBaslik(text) {
-        if(!text) return "";
-        let t = text.replace(/\(.*\)/g, '').split('-')[0].trim();
-        return t.charAt(0).toLocaleUpperCase('tr-TR') + t.slice(1).toLocaleLowerCase('tr-TR');
     }
 
     function resetImportBtn() {
@@ -392,7 +398,6 @@
         });
     }
 
-    // --- TOPLU İŞLEMLER (SİLME & BİRLEŞTİRME) ---
     let allSelected = false;
     document.getElementById('selectAllBtn').addEventListener('click', () => {
         const checkboxes = document.querySelectorAll('.project-checkbox');
@@ -542,13 +547,14 @@
             preConfirm: () => [ document.getElementById('swal-input1').value.trim(), document.getElementById('swal-input2').value.trim(), document.getElementById('swal-input3').value.trim() ]
         });
         if (formValues) {
-            const [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
+            let [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
             
-            // DÜZENLEME EKRANINDA DA AYNI FORMATI ZORLUYORUZ (Ahmet YILMAZ)
+            // DÜZENLEMEDE FORMATLAMALARI ZORLUYORUZ
             const formatliOgrenciAdi = formatOgrenciAdi(yeniOgrenciAdi);
+            const formatliProjeAdi = formatProjeAdi(yeniProjeAdi); // TAMAMI BÜYÜK
 
-            if (!yeniProjeAdi || !formatliOgrenciAdi) return Swal.fire('Hata', 'Boş bırakılamaz.', 'error');
-            try { await updateDoc(doc(db, "projeler", id), { proje_adi: yeniProjeAdi, grup_adi: yeniGrupAdi, ogrenci_adi: formatliOgrenciAdi }); Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false }); projeleriGetir(); } catch (error) { Swal.fire('Hata', '', 'error'); }
+            if (!formatliProjeAdi || !formatliOgrenciAdi) return Swal.fire('Hata', 'Boş bırakılamaz.', 'error');
+            try { await updateDoc(doc(db, "projeler", id), { proje_adi: formatliProjeAdi, grup_adi: yeniGrupAdi, ogrenci_adi: formatliOgrenciAdi }); Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false }); projeleriGetir(); } catch (error) { Swal.fire('Hata', '', 'error'); }
         }
     }
 
@@ -602,15 +608,18 @@
     }
 
     document.getElementById('ekleBtn').addEventListener('click', async () => {
-        const pAdi = document.getElementById('projeAdi').value.trim(); const gAdi = document.getElementById('grupAdi').value.trim(); const oAdi = document.getElementById('ogrenciAdi').value.trim();
+        let pAdi = document.getElementById('projeAdi').value.trim(); 
+        const gAdi = document.getElementById('grupAdi').value.trim(); 
+        let oAdi = document.getElementById('ogrenciAdi').value.trim();
         
-        // MANUEL EKLEMEDE DE AYNI FORMATI ZORLUYORUZ (Ahmet YILMAZ)
+        // MANUEL EKLEMEDE DE FORMATLARI ZORLUYORUZ
         const formatliOgrenciAdi = formatOgrenciAdi(oAdi);
+        const formatliProjeAdi = formatProjeAdi(pAdi); // TAMAMI BÜYÜK
 
-        if (!pAdi || !formatliOgrenciAdi) return Swal.fire('Eksik Bilgi', 'Proje adı ve öğrenci isimleri zorunludur.', 'info');
+        if (!formatliProjeAdi || !formatliOgrenciAdi) return Swal.fire('Eksik Bilgi', 'Proje adı ve öğrenci isimleri zorunludur.', 'info');
         document.getElementById('ekleBtn').disabled = true; document.getElementById('ekleBtn').innerText = "Ekleniyor...";
         try {
-            await addDoc(collection(db, "projeler"), { proje_adi: pAdi, grup_adi: gAdi, ogrenci_adi: formatliOgrenciAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() });
+            await addDoc(collection(db, "projeler"), { proje_adi: formatliProjeAdi, grup_adi: gAdi, ogrenci_adi: formatliOgrenciAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() });
             document.getElementById('projeAdi').value = ""; document.getElementById('grupAdi').value = ""; document.getElementById('ogrenciAdi').value = "";
             Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje eklendi.', timer: 2000, showConfirmButton: false }); projeleriGetir();
         } catch (e) { Swal.fire('Hata', 'Sorun oluştu.', 'error'); } finally { document.getElementById('ekleBtn').disabled = false; document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret"; }
