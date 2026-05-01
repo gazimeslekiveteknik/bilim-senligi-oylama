@@ -31,14 +31,48 @@
         
         #adminPanel, #loginSection { margin-top: 20px; }
         
-        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 30px; }
+        /* SABİT (STICKY) İŞLEM BARI STİLLERİ */
+        .sticky-actions-bar {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            z-index: 100;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sticky-actions-bar h2 {
+            margin: 0;
+            font-size: 22px;
+            white-space: nowrap;
+        }
+
+        .action-buttons-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            overflow-x: auto; /* Çok dar ekranlarda yatay kaydırma sağlar */
+            padding-bottom: 5px; /* Kaydırma çubuğu için ufak boşluk */
+        }
+        
+        /* Butonların asla alt satıra düşmemesi için */
+        .action-buttons-container button {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .project-card { position: relative; border: 1px solid #e0e0e0; padding: 20px; text-align: center; border-radius: 8px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
         .project-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .project-card h3 { font-size: 18px; margin-bottom: 5px; color: #222; min-height: 44px;}
         .project-card .grup-title { font-size: 14px; font-weight: bold; color: #444; margin-bottom: 5px; }
         .project-card p { font-size: 13px; color: #666; margin-bottom: 15px; }
         
-        /* Proje Seçim Tiki (Checkbox) Stili */
         .project-checkbox { position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; cursor: pointer; accent-color: #dc3545; }
         
         .stats-box { background-color: #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 14px; }
@@ -98,7 +132,7 @@
                 <h3 style="margin-top: 0; color: #383d41; font-size: 16px;">📥 Google Tablolardan Toplu İçe Aktarım</h3>
                 <p style="font-size: 13px; color: #555; margin-bottom: 15px;">
                     Google Form yanıtlarınızı sisteme topluca çekmek için, Google Tablonuzu açıp <strong>Dosya &gt; Paylaş &gt; Web'de Yayınla</strong> menüsünden <strong>"Virgülle ayrılmış değerler (.csv)"</strong> seçeneği ile yayınlayın.<br>
-                    <em>* "Robot (montaj)" veya "Graf torisi" gibi harf ve eklenti farklılığı olan projeler Zeki Algoritma ile otomatik olarak tek çatı altında birleştirilecektir.</em>
+                    <em>* Başarıyla aktarım yaptığınız link sistemde kalıcı olarak saklanacaktır.</em>
                 </p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="sheetCsvLink" placeholder="Google Tablolar CSV Yayın Linki (https://docs.google.com/spreadsheets/.../pub?output=csv)" style="margin-bottom: 0; flex: 1; min-width: 250px;">
@@ -120,19 +154,18 @@
                 <button id="ekleBtn" class="btn-success">Projeyi Ekle ve Karekod Üret</button>
             </div>
             
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <h2>Mevcut Stantlar ve Durumlar</h2>
-                <div>
-                    <!-- TOPLU SİLME VE BİRLEŞTİRME BUTONLARI -->
-                    <button id="selectAllBtn" class="btn-warning" style="width: auto; padding: 8px 15px; margin-right: 5px;">Tümünü Seç</button>
-                    <button id="bulkMergeBtn" class="btn-success" style="width: auto; padding: 8px 15px; margin-right: 5px; display: none;">Seçilenleri Birleştir (0)</button>
-                    <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; margin-right: 10px; display: none;">Seçilenleri Sil (0)</button>
+            <!-- SABİT (STICKY) İŞLEM BARI -->
+            <div class="sticky-actions-bar">
+                <h2>Mevcut Stantlar</h2>
+                <div class="action-buttons-container">
+                    <button id="selectAllBtn" class="btn-warning" style="width: auto; padding: 8px 15px;">Tümünü Seç</button>
+                    <button id="bulkMergeBtn" class="btn-success" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Birleştir (0)</button>
+                    <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Sil (0)</button>
                     
-                    <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px; margin-right: 5px;">Excel İndir</button>
+                    <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px;">Excel İndir</button>
                     <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 15px;">Çıkış</button>
                 </div>
             </div>
-            <hr style="margin: 10px 0 30px;">
         </div>
 
         <div class="project-grid" id="projeListesi"></div>
@@ -166,11 +199,14 @@
 
     function getOylamaUrl(id) { return new URL(`oyla.html?id=${id}`, window.location.href).href; }
 
+    // AYARLARI ÇEK (Google Linki Dahil)
     async function ayarlariGetir() {
         try {
             const docSnap = await getDoc(doc(db, "ayarlar", "genel"));
-            if (docSnap.exists() && docSnap.data().gunlukOyHakki) {
-                document.getElementById('oyLimiti').value = docSnap.data().gunlukOyHakki;
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if(data.gunlukOyHakki) document.getElementById('oyLimiti').value = data.gunlukOyHakki;
+                if(data.googleSheetsLink) document.getElementById('sheetCsvLink').value = data.googleSheetsLink;
             }
         } catch (e) { console.error("Ayar çekilemedi", e); }
     }
@@ -184,7 +220,7 @@
         } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error'); }
     });
 
-    // GOOGLE SHEETS AKTARIMI
+    // GOOGLE SHEETS AKTARIMI VE LİNK KAYDETME
     document.getElementById('importSheetBtn').addEventListener('click', async () => {
         const csvUrl = document.getElementById('sheetCsvLink').value.trim();
         if (!csvUrl || !csvUrl.includes('pub?output=csv')) {
@@ -204,6 +240,9 @@
                     resetImportBtn();
                     return Swal.fire('Hata', 'Tabloda okunabilir veri bulunamadı.', 'error');
                 }
+
+                // Başarılı bir şekilde çekim başladıysa linki veritabanına kaydet
+                await setDoc(doc(db, "ayarlar", "genel"), { googleSheetsLink: csvUrl }, { merge: true });
 
                 document.getElementById('importSheetBtn').innerText = "İşleniyor...";
 
@@ -260,7 +299,6 @@
                         eklenenSayi++;
                     }
 
-                    document.getElementById('sheetCsvLink').value = "";
                     Swal.fire('Başarılı', `${eklenenSayi} adet proje zeki algoritma ile birleştirilerek başarıyla sisteme aktarıldı.`, 'success');
                     projeleriGetir();
                 } catch (e) {
@@ -361,7 +399,6 @@
             bulkDelBtn.style.display = 'inline-block';
             bulkDelBtn.innerText = `Seçilenleri Sil (${checkedCount})`;
             
-            // Sadece 1'den fazla proje seçildiğinde birleştir butonu görünür
             if(checkedCount > 1) {
                 bulkMergeBtn.style.display = 'inline-block';
                 bulkMergeBtn.innerText = `Seçilenleri Birleştir (${checkedCount})`;
@@ -397,7 +434,6 @@
         });
     });
 
-    // YENİ: SEÇİLENLERİ BİRLEŞTİR BUTONU
     document.getElementById('bulkMergeBtn').addEventListener('click', async () => {
         const checkedBoxes = document.querySelectorAll('.project-checkbox:checked');
         if(checkedBoxes.length < 2) return;
@@ -416,7 +452,6 @@
 
             if(projectsData.length < 2) return Swal.fire('Hata', 'Birleştirilecek yeterli proje bulunamadı.', 'error');
 
-            // Kullanıcıya hangi proje adını saklamak istediğini soruyoruz
             let inputOptions = {};
             projectsData.forEach((p, index) => {
                 inputOptions[index] = `${p.proje_adi} ${p.grup_adi ? '(Grup: ' + p.grup_adi + ')' : ''}`;
@@ -444,7 +479,6 @@
                 let totalOy = 0;
                 let totalPuan = 0;
 
-                // Tüm seçili projelerdeki verileri toparla
                 projectsData.forEach(p => {
                     if(p.ogrenci_adi) {
                         p.ogrenci_adi.split(',').forEach(s => {
@@ -456,18 +490,16 @@
                     totalPuan += (p.toplam_ham_puan || 0);
                 });
 
-                let finalOgrenciStr = mergedOgrenci.join(', '); // İsimleri birleştir (aynı isim varsa array koruması sayesinde 1 kere yazılır)
+                let finalOgrenciStr = mergedOgrenci.join(', '); 
 
                 Swal.fire({ title: 'Birleştiriliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-                // Seçilen ana projeyi güncel toplamlarla kaydet
                 await updateDoc(doc(db, "projeler", baseProject.id), {
                     ogrenci_adi: finalOgrenciStr,
                     toplam_oy_sayisi: totalOy,
                     toplam_ham_puan: totalPuan
                 });
 
-                // Diğer artıkları sil
                 for(let p of projectsData) {
                     if(p.id !== baseProject.id) {
                         await deleteDoc(doc(db, "projeler", p.id));
