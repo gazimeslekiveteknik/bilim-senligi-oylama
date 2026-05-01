@@ -123,8 +123,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2>Mevcut Stantlar ve Durumlar</h2>
                 <div>
-                    <!-- YENİ EKLENEN TOPLU SİLME VE SEÇİM BUTONLARI -->
+                    <!-- TOPLU SİLME VE BİRLEŞTİRME BUTONLARI -->
                     <button id="selectAllBtn" class="btn-warning" style="width: auto; padding: 8px 15px; margin-right: 5px;">Tümünü Seç</button>
+                    <button id="bulkMergeBtn" class="btn-success" style="width: auto; padding: 8px 15px; margin-right: 5px; display: none;">Seçilenleri Birleştir (0)</button>
                     <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; margin-right: 10px; display: none;">Seçilenleri Sil (0)</button>
                     
                     <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px; margin-right: 5px;">Excel İndir</button>
@@ -183,6 +184,7 @@
         } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error'); }
     });
 
+    // GOOGLE SHEETS AKTARIMI
     document.getElementById('importSheetBtn').addEventListener('click', async () => {
         const csvUrl = document.getElementById('sheetCsvLink').value.trim();
         if (!csvUrl || !csvUrl.includes('pub?output=csv')) {
@@ -334,30 +336,41 @@
         });
     }
 
-    // --- TOPLU SİLME VE SEÇİM İŞLEMLERİ ---
+    // --- TOPLU İŞLEMLER (SİLME & BİRLEŞTİRME) ---
     let allSelected = false;
     document.getElementById('selectAllBtn').addEventListener('click', () => {
         const checkboxes = document.querySelectorAll('.project-checkbox');
         allSelected = !allSelected;
         checkboxes.forEach(cb => cb.checked = allSelected);
         document.getElementById('selectAllBtn').innerText = allSelected ? "Seçimi Temizle" : "Tümünü Seç";
-        toggleBulkDeleteBtn();
+        toggleBulkActionsBtn();
     });
 
     document.getElementById('projeListesi').addEventListener('change', (e) => {
         if(e.target.classList.contains('project-checkbox')) {
-            toggleBulkDeleteBtn();
+            toggleBulkActionsBtn();
         }
     });
 
-    function toggleBulkDeleteBtn() {
+    function toggleBulkActionsBtn() {
         const checkedCount = document.querySelectorAll('.project-checkbox:checked').length;
-        const bulkBtn = document.getElementById('bulkDeleteBtn');
+        const bulkDelBtn = document.getElementById('bulkDeleteBtn');
+        const bulkMergeBtn = document.getElementById('bulkMergeBtn');
+        
         if(checkedCount > 0) {
-            bulkBtn.style.display = 'inline-block';
-            bulkBtn.innerText = `Seçilenleri Sil (${checkedCount})`;
+            bulkDelBtn.style.display = 'inline-block';
+            bulkDelBtn.innerText = `Seçilenleri Sil (${checkedCount})`;
+            
+            // Sadece 1'den fazla proje seçildiğinde birleştir butonu görünür
+            if(checkedCount > 1) {
+                bulkMergeBtn.style.display = 'inline-block';
+                bulkMergeBtn.innerText = `Seçilenleri Birleştir (${checkedCount})`;
+            } else {
+                bulkMergeBtn.style.display = 'none';
+            }
         } else {
-            bulkBtn.style.display = 'none';
+            bulkDelBtn.style.display = 'none';
+            bulkMergeBtn.style.display = 'none';
             allSelected = false;
             document.getElementById('selectAllBtn').innerText = "Tümünü Seç";
         }
@@ -371,24 +384,104 @@
             title: 'Toplu Silme İşlemi',
             text: `Seçilen ${checkedBoxes.length} proje ve bu projelere ait TÜM OYLAR kalıcı olarak silinecektir. Onaylıyor musunuz?`,
             icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            confirmButtonText: 'Evet, Hepsini Sil',
-            cancelButtonText: 'İptal'
+            showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Evet, Hepsini Sil', cancelButtonText: 'İptal'
         }).then(async (result) => {
             if (result.isConfirmed) {
                 Swal.fire({ title: 'Siliniyor...', text: 'Lütfen bekleyin', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
                 try {
-                    for(const cb of checkedBoxes) {
-                        await deleteDoc(doc(db, "projeler", cb.value));
-                    }
+                    for(const cb of checkedBoxes) { await deleteDoc(doc(db, "projeler", cb.value)); }
                     Swal.fire('Başarılı!', `${checkedBoxes.length} adet proje başarıyla silindi.`, 'success');
                     projeleriGetir();
-                } catch (e) {
-                    Swal.fire('Hata!', 'Toplu silme işlemi sırasında bir sorun oluştu.', 'error');
-                }
+                } catch (e) { Swal.fire('Hata!', 'Toplu silme işlemi sırasında bir sorun oluştu.', 'error'); }
             }
         });
+    });
+
+    // YENİ: SEÇİLENLERİ BİRLEŞTİR BUTONU
+    document.getElementById('bulkMergeBtn').addEventListener('click', async () => {
+        const checkedBoxes = document.querySelectorAll('.project-checkbox:checked');
+        if(checkedBoxes.length < 2) return;
+
+        let selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+        let projectsData = [];
+
+        Swal.fire({ title: 'Veriler alınıyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+        try {
+            for(let id of selectedIds) {
+                let snap = await getDoc(doc(db, "projeler", id));
+                if(snap.exists()) { projectsData.push({ id: id, ...snap.data() }); }
+            }
+            Swal.close();
+
+            if(projectsData.length < 2) return Swal.fire('Hata', 'Birleştirilecek yeterli proje bulunamadı.', 'error');
+
+            // Kullanıcıya hangi proje adını saklamak istediğini soruyoruz
+            let inputOptions = {};
+            projectsData.forEach((p, index) => {
+                inputOptions[index] = `${p.proje_adi} ${p.grup_adi ? '(Grup: ' + p.grup_adi + ')' : ''}`;
+            });
+
+            const { value: selectedIndex } = await Swal.fire({
+                title: 'Projeleri Birleştir',
+                text: 'Seçili projelerdeki öğrencilerin tamamı, oylar ve puanlar toplanacaktır. Sisteme hangi başlıkla kaydedilsin?',
+                input: 'select',
+                inputOptions: inputOptions,
+                inputPlaceholder: 'Ana Projeyi Seçin',
+                showCancelButton: true,
+                confirmButtonText: 'Birleştir',
+                cancelButtonText: 'İptal',
+                inputValidator: (value) => {
+                    return new Promise((resolve) => {
+                        if (value !== '') { resolve() } else { resolve('Lütfen bir ana proje seçin') }
+                    })
+                }
+            });
+
+            if(selectedIndex !== undefined) {
+                let baseProject = projectsData[selectedIndex];
+                let mergedOgrenci = [];
+                let totalOy = 0;
+                let totalPuan = 0;
+
+                // Tüm seçili projelerdeki verileri toparla
+                projectsData.forEach(p => {
+                    if(p.ogrenci_adi) {
+                        p.ogrenci_adi.split(',').forEach(s => {
+                            let st = s.trim();
+                            if(st && !mergedOgrenci.includes(st)) { mergedOgrenci.push(st); }
+                        });
+                    }
+                    totalOy += (p.toplam_oy_sayisi || 0);
+                    totalPuan += (p.toplam_ham_puan || 0);
+                });
+
+                let finalOgrenciStr = mergedOgrenci.join(', '); // İsimleri birleştir (aynı isim varsa array koruması sayesinde 1 kere yazılır)
+
+                Swal.fire({ title: 'Birleştiriliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+                // Seçilen ana projeyi güncel toplamlarla kaydet
+                await updateDoc(doc(db, "projeler", baseProject.id), {
+                    ogrenci_adi: finalOgrenciStr,
+                    toplam_oy_sayisi: totalOy,
+                    toplam_ham_puan: totalPuan
+                });
+
+                // Diğer artıkları sil
+                for(let p of projectsData) {
+                    if(p.id !== baseProject.id) {
+                        await deleteDoc(doc(db, "projeler", p.id));
+                    }
+                }
+
+                Swal.fire('Başarılı!', 'Projeler, oyları korunarak başarıyla tek çatı altında birleştirildi.', 'success');
+                projeleriGetir();
+            }
+
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Hata!', 'Birleştirme işlemi sırasında bir sorun oluştu.', 'error');
+        }
     });
     // -------------------------------------
 
@@ -416,8 +509,10 @@
 
     async function projeleriGetir() {
         const projeListesi = document.getElementById('projeListesi'); projeListesi.innerHTML = "<p><em>Veriler çekiliyor...</em></p>";
-        // Listeyi yenilerken "Tümünü Seç" durumu ve toplu sil butonunu gizle
-        toggleBulkDeleteBtn(); 
+        
+        // Tabloyu yenilerken butonları sıfırlıyoruz
+        toggleBulkActionsBtn(); 
+        
         try {
             const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc")); const querySnapshot = await getDocs(q);
             let htmlStr = ""; let qrData = []; 
@@ -429,7 +524,6 @@
                 const safeProje = (data.proje_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); const safeGrup = (data.grup_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); const safeOgrenci = (data.ogrenci_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
                 qrData.push({ id: id, link: getOylamaUrl(id) });
                 
-                // YENİ: Kartın içine checkbox eklendi
                 htmlStr += `
                     <div class="project-card">
                         <input type="checkbox" class="project-checkbox no-print" value="${id}">
