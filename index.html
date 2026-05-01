@@ -148,7 +148,7 @@
                     <input type="text" id="grupAdi" placeholder="Grup Adı (Örn: Robotik Kulübü veya 11/A Sınıfı)">
                 </div>
                 <div class="form-group">
-                    <input type="text" id="ogrenciAdi" placeholder="Öğrenci İsimleri (Örn: Ahmet Yılmaz, Ayşe Kaya)">
+                    <input type="text" id="ogrenciAdi" placeholder="Öğrenci İsimleri (Örn: Ahmet YILMAZ - Ayşe KAYA)">
                 </div>
                 <button id="ekleBtn" class="btn-success">Projeyi Ekle ve Karekod Üret</button>
             </div>
@@ -217,12 +217,12 @@
         } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error'); }
     });
 
-    // --- YENİ: METİN FORMATLAMA VE TEKİLLEŞTİRME FONKSİYONLARI ---
+    // --- YENİ: METİN FORMATLAMA VE TEKİLLEŞTİRME (TİRE İLE AYIRMA) ---
     
-    // Öğrenci Adı Formatlama ve Aynı İsimleri Silme (Örn: Ahmet YILMAZ)
     function formatOgrenciAdi(metin) {
         if (!metin) return "";
-        let isimler = metin.split(',').map(isim => {
+        // Virgül veya tire (ve etrafındaki olası boşluklar) ile ayrılmış metni parçala
+        let isimler = metin.split(/[,|-]+/).map(isim => {
             let parcalar = isim.trim().split(/\s+/);
             if (parcalar.length === 0 || parcalar[0] === "") return "";
             if (parcalar.length === 1) {
@@ -234,10 +234,11 @@
             return adlar.join(' ') + ' ' + soyad;
         }).filter(i => i !== "");
 
-        // KÜME (SET) KULLANARAK TEKRARLAYAN İSİMLERİ SİLİYORUZ
+        // Tekrarlayan isimleri sil
         let benzersizIsimler = [...new Set(isimler)];
         
-        return benzersizIsimler.join(', ');
+        // İsimleri virgül yerine TİRE (-) ve boşluk ile birleştir
+        return benzersizIsimler.join(' - ');
     }
 
     // Proje Adı Formatlama (TÜMÜ BÜYÜK HARF)
@@ -250,7 +251,7 @@
     function temizleBaslik(text) {
         if(!text) return "";
         let t = text.replace(/\(.*\)/g, '').split('-')[0].trim();
-        return formatProjeAdi(t); // TAMAMI BÜYÜK HARF
+        return formatProjeAdi(t);
     }
     // --------------------------------------------
 
@@ -319,8 +320,8 @@
                     let eklenenSayi = 0;
                     
                     for (let [key, pData] of projelerMap) {
-                        // Burada join yapıp formatOgrenciAdi'na gönderdiğimizde mükerrer olanları otomatik silecektir
-                        const ogrenciMetni = formatOgrenciAdi(pData.ogrenciler.join(", ")); 
+                        // Virgüle veya tireye böleceği için join içine ne attığımızın önemi yok
+                        const ogrenciMetni = formatOgrenciAdi(pData.ogrenciler.join(" - ")); 
                         
                         await addDoc(collection(db, "projeler"), {
                             proje_adi: pData.proje_adi,
@@ -508,15 +509,18 @@
 
                 projectsData.forEach(p => {
                     if(p.ogrenci_adi) {
-                        mergedOgrenci.push(p.ogrenci_adi); // Parçalamaya gerek yok, formatOgrenciAdi halledecek
+                        // Veritabanında tireli (-) durduğu için tireden de parçalayıp küme listesine yolluyoruz
+                        p.ogrenci_adi.split(/[,|-]+/).forEach(s => {
+                            let st = s.trim();
+                            if(st && !mergedOgrenci.includes(st)) { mergedOgrenci.push(st); }
+                        });
                     }
                     totalOy += (p.toplam_oy_sayisi || 0);
                     totalPuan += (p.toplam_ham_puan || 0);
                 });
 
-                // Tıpkı import işlemindeki gibi, birleştirilmiş string'i formatOgrenciAdi fonksiyonuna atıyoruz
-                // O kendi içinde virgüllerden bölüp formatlayacak ve tekrarlayanları SİLECEK
-                let finalOgrenciStr = formatOgrenciAdi(mergedOgrenci.join(', ')); 
+                // Toparladığımız isimleri tekrar tireli temiz formata oturtuyoruz
+                let finalOgrenciStr = formatOgrenciAdi(mergedOgrenci.join(' - ')); 
 
                 Swal.fire({ title: 'Birleştiriliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
@@ -545,14 +549,13 @@
     window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutOgrenci) {
         const { value: formValues } = await Swal.fire({
             title: 'Projeyi Düzenle',
-            html: `<input id="swal-input1" class="swal2-input" placeholder="Proje Adı" value="${mevcutAdi}">` + `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` + `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri" value="${mevcutOgrenci}">`,
+            html: `<input id="swal-input1" class="swal2-input" placeholder="Proje Adı" value="${mevcutAdi}">` + `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` + `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri (Örn: Ahmet YILMAZ - Ayşe KAYA)" value="${mevcutOgrenci}">`,
             focusConfirm: false, showCancelButton: true, confirmButtonText: 'Güncelle', cancelButtonText: 'İptal',
             preConfirm: () => [ document.getElementById('swal-input1').value.trim(), document.getElementById('swal-input2').value.trim(), document.getElementById('swal-input3').value.trim() ]
         });
         if (formValues) {
             let [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
             
-            // DÜZENLEMEDE FORMATLAMALARI VE MÜKERRER SİLİCİYİ ÇALIŞTIRIYORUZ
             const formatliOgrenciAdi = formatOgrenciAdi(yeniOgrenciAdi);
             const formatliProjeAdi = formatProjeAdi(yeniProjeAdi);
 
@@ -615,7 +618,6 @@
         const gAdi = document.getElementById('grupAdi').value.trim(); 
         let oAdi = document.getElementById('ogrenciAdi').value.trim();
         
-        // MANUEL EKLEMEDE FORMATLARI VE MÜKERRER SİLİCİYİ ÇALIŞTIRIYORUZ
         const formatliOgrenciAdi = formatOgrenciAdi(oAdi);
         const formatliProjeAdi = formatProjeAdi(pAdi); 
 
