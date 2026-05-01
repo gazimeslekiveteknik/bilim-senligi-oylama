@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gazi MTAL - Bilim Şenliği Yönetici Paneli</title>
     
+    <!-- Dış Kütüphaneler: SweetAlert2 (Uyarılar) ve QRCode.js (Karekod) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -32,8 +33,9 @@
         .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 30px; }
         .project-card { border: 1px solid #e0e0e0; padding: 20px; text-align: center; border-radius: 8px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
         .project-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .project-card h3 { font-size: 18px; margin-bottom: 8px; color: #222; min-height: 44px;}
-        .project-card p { font-size: 15px; color: #555; margin-bottom: 15px; }
+        .project-card h3 { font-size: 18px; margin-bottom: 5px; color: #222; min-height: 44px;}
+        .project-card .grup-title { font-size: 14px; font-weight: bold; color: #444; margin-bottom: 5px; }
+        .project-card p { font-size: 13px; color: #666; margin-bottom: 15px; }
         
         /* İstatistik Kutusu */
         .stats-box { background-color: #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 14px; }
@@ -84,26 +86,41 @@
                 border-top: 1px dashed #bbb; /* Katlama çizgisi */
             }
             
+            /* Konteyner Sorgusu (Container Queries) ile Otomatik Sığdırma Altyapısı */
             .print-text-container {
                 flex: 1;
                 padding-right: 50px;
                 text-align: left;
-                word-break: break-word;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                container-type: inline-size; /* İçeriğin genişliğe göre ölçeklenmesini sağlar */
             }
 
             .print-proje-adi {
-                font-size: 65px; /* Devasa başlık */
+                font-size: 55px; /* En büyük başlık */
                 font-weight: 900;
                 color: #000;
                 line-height: 1.1;
-                margin-bottom: 25px;
+                margin-bottom: 12px;
                 text-transform: uppercase;
+                word-break: break-word;
             }
 
             .print-grup-adi {
-                font-size: 38px;
-                font-weight: 600;
+                font-size: 34px; /* Orta büyüklük */
+                font-weight: 700;
                 color: #333;
+                margin-bottom: 8px;
+            }
+
+            .print-ogrenci-adi {
+                /* Font boyutunu konteynerin genişliğine göre otomatik hesapla (min: 16px, max: 24px) */
+                font-size: clamp(16px, 4cqw, 24px); 
+                font-weight: 600;
+                color: #666;
+                line-height: 1.3;
+                text-wrap: balance; /* Taşan isimleri estetik biçimde alt satıra yayar */
             }
 
             .print-qr-container {
@@ -127,11 +144,13 @@
 </head>
 <body>
 
+<!-- MASA İSİMLİĞİ YAZDIRMA ŞABLONU (Arka planda çalışır) -->
 <div id="printArea"></div>
 
 <div class="container">
     <h1 class="no-print">🔬 Gazi MTAL - Bilim Şenliği Yönetici Paneli</h1>
     
+    <!-- Giriş Ekranı -->
     <div id="loginSection" class="no-print">
         <h2>Yönetici Girişi</h2>
         <input type="email" id="loginEmail" placeholder="E-posta Adresi">
@@ -139,6 +158,7 @@
         <button id="loginBtn" class="btn-primary">Giriş Yap</button>
     </div>
 
+    <!-- Yönetici Paneli -->
     <div id="adminPanel" style="display: none;">
         <div class="no-print">
             <p style="text-align: center; color: #666;">Şenlik projelerini buradan ekleyebilir, düzenleyebilir ve barkod çıktılarını alabilirsiniz.</p>
@@ -148,7 +168,10 @@
                     <input type="text" id="projeAdi" placeholder="Proje Adı (Örn: Otonom Çöp Ayrıştırma)">
                 </div>
                 <div class="form-group">
-                    <input type="text" id="ogrenciAdi" placeholder="Öğrenci veya Grup Adı (Örn: 11/A - Ahmet Yılmaz)">
+                    <input type="text" id="grupAdi" placeholder="Grup Adı (Örn: Robotik Kulübü veya 11/A Sınıfı)">
+                </div>
+                <div class="form-group">
+                    <input type="text" id="ogrenciAdi" placeholder="Öğrenci İsimleri (Örn: Ahmet Yılmaz, Ayşe Kaya)">
                 </div>
                 <button id="ekleBtn" class="btn-success">Projeyi Ekle ve Karekod Üret</button>
             </div>
@@ -239,7 +262,7 @@
             
             // UTF-8 BOM ekleyerek Excel'de Türkçe karakterlerin düzgün görünmesini sağlıyoruz
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
-            csvContent += "Sıra,Proje Adı,Öğrenci/Grup Adı,Toplam Oy,Toplam Ham Puan,Ortalama\n";
+            csvContent += "Sıra,Proje Adı,Grup Adı,Öğrenci İsimleri,Toplam Oy,Toplam Ham Puan,Ortalama\n";
             
             let sira = 1;
             querySnapshot.forEach((docSnap) => {
@@ -248,11 +271,12 @@
                 const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
                 
-                // Virgül veya çift tırnak içeren metinleri güvenli hale getirme
-                const proje = `"${data.proje_adi.replace(/"/g, '""')}"`;
-                const ogrenci = `"${data.ogrenci_adi.replace(/"/g, '""')}"`;
+                // Güvenli string manipülasyonu
+                const proje = `"${(data.proje_adi || "").replace(/"/g, '""')}"`;
+                const grup = `"${(data.grup_adi || "").replace(/"/g, '""')}"`;
+                const ogrenci = `"${(data.ogrenci_adi || "").replace(/"/g, '""')}"`;
                 
-                csvContent += `${sira},${proje},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`;
+                csvContent += `${sira},${proje},${grup},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`;
                 sira++;
             });
             
@@ -285,20 +309,29 @@
     }
 
     // PROJE DÜZENLEME FONKSİYONU
-    window.projeDuzenle = async function(id, mevcutAdi, mevcutOgrenci) {
+    window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutOgrenci) {
         const { value: formValues } = await Swal.fire({
             title: 'Projeyi Düzenle',
             html: `<input id="swal-input1" class="swal2-input" placeholder="Proje Adı" value="${mevcutAdi}">` +
-                  `<input id="swal-input2" class="swal2-input" placeholder="Öğrenci/Grup Adı" value="${mevcutOgrenci}">`,
+                  `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` +
+                  `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri" value="${mevcutOgrenci}">`,
             focusConfirm: false, showCancelButton: true, confirmButtonText: 'Güncelle', cancelButtonText: 'İptal',
-            preConfirm: () => [document.getElementById('swal-input1').value.trim(), document.getElementById('swal-input2').value.trim()]
+            preConfirm: () => [
+                document.getElementById('swal-input1').value.trim(), 
+                document.getElementById('swal-input2').value.trim(),
+                document.getElementById('swal-input3').value.trim()
+            ]
         });
 
         if (formValues) {
-            const [yeniProjeAdi, yeniOgrenciAdi] = formValues;
-            if (!yeniProjeAdi || !yeniOgrenciAdi) return Swal.fire('Hata', 'Alanlar boş bırakılamaz.', 'error');
+            const [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
+            if (!yeniProjeAdi || !yeniGrupAdi || !yeniOgrenciAdi) return Swal.fire('Hata', 'Alanlar boş bırakılamaz.', 'error');
             try {
-                await updateDoc(doc(db, "projeler", id), { proje_adi: yeniProjeAdi, ogrenci_adi: yeniOgrenciAdi });
+                await updateDoc(doc(db, "projeler", id), { 
+                    proje_adi: yeniProjeAdi, 
+                    grup_adi: yeniGrupAdi,
+                    ogrenci_adi: yeniOgrenciAdi 
+                });
                 Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false });
                 projeleriGetir();
             } catch (error) { Swal.fire('Hata', 'Güncelleme işlemi başarısız oldu.', 'error'); }
@@ -306,7 +339,7 @@
     }
 
     // TEKLİ MASA İSİMLİĞİ YAZDIRMA FONKSİYONU
-    window.masaIsimligiYazdir = function(projeAdi, ogrenciAdi, id) {
+    window.masaIsimligiYazdir = function(projeAdi, grupAdi, ogrenciAdi, id) {
         const printArea = document.getElementById('printArea');
         const oylamaLinki = getOylamaUrl(id);
         
@@ -315,14 +348,16 @@
             <div class="print-half print-top-half">
                 <div class="print-text-container">
                     <div class="print-proje-adi">${projeAdi}</div>
-                    <div class="print-grup-adi">${ogrenciAdi}</div>
+                    <div class="print-grup-adi">${grupAdi}</div>
+                    <div class="print-ogrenci-adi">${ogrenciAdi}</div>
                 </div>
                 <div class="print-qr-container" id="qr-top"></div>
             </div>
             <div class="print-half print-bottom-half">
                 <div class="print-text-container">
                     <div class="print-proje-adi">${projeAdi}</div>
-                    <div class="print-grup-adi">${ogrenciAdi}</div>
+                    <div class="print-grup-adi">${grupAdi}</div>
+                    <div class="print-ogrenci-adi">${ogrenciAdi}</div>
                 </div>
                 <div class="print-qr-container" id="qr-bottom"></div>
             </div>
@@ -362,14 +397,15 @@
                 const data = docSnap.data();
                 const id = docSnap.id;
                 
-                // İstatistik Hesaplamaları (Hassasiyet 2 haneye çıkarıldı: toFixed(2))
+                // İstatistik Hesaplamaları 
                 const toplamOy = data.toplam_oy_sayisi || 0;
                 const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
                 
-                // Güvenli tırnak temizliği (Fonksiyon parametrelerinde hata vermemesi için)
-                const safeProje = data.proje_adi.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                const safeOgrenci = data.ogrenci_adi.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                // Güvenli tırnak temizliği 
+                const safeProje = (data.proje_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safeGrup = (data.grup_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safeOgrenci = (data.ogrenci_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
                 qrData.push({ id: id, link: getOylamaUrl(id) });
 
@@ -377,6 +413,7 @@
                     <div class="project-card">
                         <div>
                             <h3>${data.proje_adi}</h3>
+                            <div class="grup-title">${data.grup_adi || "-"}</div>
                             <p>${data.ogrenci_adi}</p>
                             
                             <div class="stats-box no-print">
@@ -393,8 +430,8 @@
                         </div>
                         
                         <div class="card-actions no-print">
-                            <button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeOgrenci}')">Projeyi Düzenle</button>
-                            <button class="btn-primary" onclick="masaIsimligiYazdir('${safeProje}', '${safeOgrenci}', '${id}')">Masa İsimliği Yazdır</button>
+                            <button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeOgrenci}')">Projeyi Düzenle</button>
+                            <button class="btn-primary" onclick="masaIsimligiYazdir('${safeProje}', '${safeGrup}', '${safeOgrenci}', '${id}')">Masa İsimliği Yazdır</button>
                             <button class="btn-danger" onclick="projeSil('${id}')">Projeyi Sil</button>
                         </div>
                     </div>
@@ -420,9 +457,10 @@
     // YENİ PROJE EKLEME
     document.getElementById('ekleBtn').addEventListener('click', async () => {
         const pAdi = document.getElementById('projeAdi').value.trim();
+        const gAdi = document.getElementById('grupAdi').value.trim();
         const oAdi = document.getElementById('ogrenciAdi').value.trim();
 
-        if (!pAdi || !oAdi) return Swal.fire('Eksik Bilgi', 'Lütfen proje adını ve öğrenci/grup adını doldurun.', 'info');
+        if (!pAdi || !gAdi || !oAdi) return Swal.fire('Eksik Bilgi', 'Lütfen tüm alanları doldurun.', 'info');
 
         document.getElementById('ekleBtn').disabled = true;
         document.getElementById('ekleBtn').innerText = "Ekleniyor...";
@@ -430,6 +468,7 @@
         try {
             await addDoc(collection(db, "projeler"), {
                 proje_adi: pAdi,
+                grup_adi: gAdi,
                 ogrenci_adi: oAdi,
                 toplam_ham_puan: 0,
                 toplam_oy_sayisi: 0,
@@ -437,6 +476,7 @@
             });
             
             document.getElementById('projeAdi').value = "";
+            document.getElementById('grupAdi').value = "";
             document.getElementById('ogrenciAdi').value = "";
             
             Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje sisteme eklendi.', timer: 2000, showConfirmButton: false });
