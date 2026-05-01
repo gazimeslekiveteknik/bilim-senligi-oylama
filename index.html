@@ -30,6 +30,7 @@
         
         #adminPanel, #loginSection { margin-top: 20px; }
         
+        /* GÜNCELLENMİŞ SABİT (STICKY) İŞLEM BARI STİLLERİ - ALT SATIR DÜZENİ */
         .sticky-actions-bar {
             position: sticky;
             top: 0;
@@ -41,14 +42,30 @@
             border-bottom: 1px solid #ddd;
             box-shadow: 0 5px 10px rgba(0,0,0,0.05); 
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column; /* Butonları alt satıra alır */
+            align-items: flex-start; /* Sola yaslar */
+            gap: 12px; /* Başlık ile butonlar arası boşluk */
         }
 
-        .sticky-actions-bar h2 { margin: 0; font-size: 22px; white-space: nowrap; }
+        .sticky-actions-bar h2 { 
+            margin: 0; 
+            font-size: 22px; 
+            text-align: left;
+        }
 
-        .action-buttons-container { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding-bottom: 5px; }
-        .action-buttons-container button { white-space: nowrap; flex-shrink: 0; }
+        .action-buttons-container { 
+            display: flex; 
+            gap: 8px; 
+            align-items: center; 
+            overflow-x: auto; 
+            padding-bottom: 5px; 
+            width: 100%; /* Yatay alanın tamamını kullanması için */
+        }
+        
+        .action-buttons-container button { 
+            white-space: nowrap; 
+            flex-shrink: 0; 
+        }
         
         .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .project-card { position: relative; border: 1px solid #e0e0e0; padding: 20px; text-align: center; border-radius: 8px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
@@ -70,9 +87,8 @@
 
         #printArea { display: none; }
 
-        /* ==================== YAZDIRMA (PRINT) ALANI ==================== */
         @media print { 
-            @page { margin: 0; } /* Tarayıcı eklerini (Tarih, URL) gizlemek için */
+            @page { margin: 0; }
             body { background-color: white; padding: 0; margin: 0; }
             .container { display: none !important; } 
 
@@ -134,7 +150,7 @@
                 <h3 style="margin-top: 0; color: #383d41; font-size: 16px;">📥 Google Tablolardan Toplu İçe Aktarım</h3>
                 <p style="font-size: 13px; color: #555; margin-bottom: 15px;">
                     Google Form yanıtlarınızı sisteme topluca çekmek için, Google Tablonuzu açıp <strong>Dosya &gt; Paylaş &gt; Web'de Yayınla</strong> menüsünden <strong>"Virgülle ayrılmış değerler (.csv)"</strong> seçeneği ile yayınlayın.<br>
-                    <em>* Başarıyla aktarım yaptığınız link sistemde kalıcı olarak saklanacaktır.</em>
+                    <em>* Başarıyla aktarım yaptığınız link sistemde kalıcı olarak saklanacaktır. Öğrenci isimleri otomatik olarak "Ad SOYAD" formatına dönüştürülür ve tekrarlayan isimler temizlenir.</em>
                 </p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="sheetCsvLink" placeholder="Google Tablolar CSV Yayın Linki (https://docs.google.com/spreadsheets/.../pub?output=csv)" style="margin-bottom: 0; flex: 1; min-width: 250px;">
@@ -150,7 +166,6 @@
                 <div class="form-group">
                     <input type="text" id="grupAdi" placeholder="Grup Adı (Örn: Robotik Kulübü veya 11/A Sınıfı)">
                 </div>
-                <!-- YENİ: Sunum Günü Alanı Eklendi -->
                 <div class="form-group">
                     <input type="text" id="sunumGunu" placeholder="Sunum Günü (Örn: 1. Gün veya 19 Mayıs)">
                 </div>
@@ -168,8 +183,7 @@
                 <button id="bulkMergeBtn" class="btn-success" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Birleştir (0)</button>
                 <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Sil (0)</button>
                 
-                <!-- YENİ: Toplu Karekod Liste Butonu -->
-                <button id="printAllQRsBtn" class="btn-primary" style="width: auto; padding: 8px 15px; border-left: 2px solid rgba(255,255,255,0.3); margin-left: 5px;">Toplu Katalog (PDF / Yazdır)</button>
+                <button id="printAllQRsBtn" class="btn-primary" style="width: auto; padding: 8px 15px;">Toplu Katalog (PDF / Yazdır)</button>
                 <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px;">Excel İndir</button>
                 <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 15px;">Çıkış</button>
             </div>
@@ -206,7 +220,6 @@
 
     function getOylamaUrl(id) { return new URL(`oyla.html?id=${id}`, window.location.href).href; }
 
-    // Yazdırma İşlemi Bitince Sayfayı Eski Haline Getirme Tetikleyicisi
     window.addEventListener('afterprint', () => {
         document.body.className = '';
         document.getElementById('printArea').innerHTML = '';
@@ -232,7 +245,6 @@
         } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error'); }
     });
 
-    // Metin Formatlama
     function formatOgrenciAdi(metin) {
         if (!metin) return "";
         let isimler = metin.split(/[,|-]+/).map(isim => {
@@ -262,14 +274,12 @@
         return formatProjeAdi(t);
     }
 
-    // TABLODAN TOPLU İÇE AKTARIM (Sorarak Gün Belirleme)
     document.getElementById('importSheetBtn').addEventListener('click', async () => {
         const csvUrl = document.getElementById('sheetCsvLink').value.trim();
         if (!csvUrl || !csvUrl.includes('pub?output=csv')) {
             return Swal.fire('Hatalı Link', 'Lütfen Google Tablolardan aldığınız doğru ".csv" yayın linkini yapıştırın.', 'warning');
         }
 
-        // Kullanıcıya bu projelerin Hangi Güne ait olduğunu soralım
         const { value: selectedDay } = await Swal.fire({
             title: 'Hangi Güne Eklensin?',
             input: 'text',
@@ -280,7 +290,7 @@
             cancelButtonText: 'İptal'
         });
 
-        if (selectedDay === undefined) return; // İptale basıldıysa işlemi durdur.
+        if (selectedDay === undefined) return; 
         const importDay = selectedDay.trim();
 
         document.getElementById('importSheetBtn').disabled = true;
@@ -343,7 +353,7 @@
                         await addDoc(collection(db, "projeler"), {
                             proje_adi: pData.proje_adi,
                             grup_adi: "",
-                            sunum_gunu: importDay, // YENİ: Toplu eklemede günü kaydediyoruz
+                            sunum_gunu: importDay,
                             ogrenci_adi: ogrenciMetni,
                             toplam_ham_puan: 0,
                             toplam_oy_sayisi: 0,
@@ -556,7 +566,6 @@
         } catch (e) { console.error(e); Swal.fire('Hata!', 'Birleştirme işlemi sırasında bir sorun oluştu.', 'error'); }
     });
 
-    // YENİ EKLENEN: GÜN (SUNUM) ALANI İLE BİRLİKTE DÜZENLEME
     window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutGunu, mevcutOgrenci) {
         const { value: formValues } = await Swal.fire({
             title: 'Projeyi Düzenle',
@@ -591,9 +600,8 @@
         }
     }
 
-    // MASA İSİMLİĞİ YAZDIR (Tekil Print)
     window.masaIsimligiYazdir = function(projeAdi, grupAdi, ogrenciAdi, id) {
-        document.body.classList.add('mode-masa'); // İlgili print CSS modunu aktif et
+        document.body.classList.add('mode-masa'); 
         const printArea = document.getElementById('printArea'); const oylamaLinki = getOylamaUrl(id);
         printArea.innerHTML = `<div class="print-half print-top-half"><div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div><div class="print-qr-container" id="qr-top"></div></div><div class="print-half print-bottom-half"><div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div><div class="print-qr-container" id="qr-bottom"></div></div>`;
         new QRCode(document.getElementById("qr-top"), { text: oylamaLinki, width: 256, height: 256, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H });
@@ -601,7 +609,6 @@
         setTimeout(() => { window.print(); }, 300);
     }
 
-    // YENİ: TOPLU KAREKOD LİSTESİ (KATALOG) YAZDIRMA FONKSİYONU
     document.getElementById('printAllQRsBtn').addEventListener('click', async () => {
         Swal.fire({ title: 'Katalog Hazırlanıyor...', text: 'Lütfen bekleyin', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
         
@@ -611,7 +618,6 @@
             
             if (querySnapshot.empty) return Swal.fire('Hata', 'Yazdırılacak proje bulunamadı.', 'warning');
 
-            // Projeleri Sunum Gününe göre gruplandır
             let grouped = {};
             let qrDataQueue = [];
 
@@ -627,7 +633,6 @@
                 <p style="font-size:18px; color:#555; margin:0;">Tüm Projeler ve Oylama Karekodları Katalogu</p>
             </div>`;
 
-            // Her gün için ayrı bir grup başlığı oluştur ve içine projeleri diz
             for (let day in grouped) {
                 htmlStr += `
                 <div class="print-day-section">
@@ -651,14 +656,13 @@
                     qrDataQueue.push({ id: p.id, link: link });
                 });
 
-                htmlStr += `</div></div>`; // Grid ve Section kapanışları
+                htmlStr += `</div></div>`; 
             }
 
-            document.body.classList.add('mode-liste'); // Toplu liste print CSS modunu aktif et
+            document.body.classList.add('mode-liste'); 
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = htmlStr;
 
-            // Oluşturulan divlere Karekodları bas (Optimize boyutlarda)
             qrDataQueue.forEach(item => {
                 new QRCode(document.getElementById(`qr-bulk-${item.id}`), {
                     text: item.link, width: 100, height: 100,
@@ -667,7 +671,6 @@
             });
 
             Swal.close();
-            // Tarayıcının QR'ları Canvas'a çizmesini beklemek için ufak bir gecikme verip Print diyalogunu açıyoruz
             setTimeout(() => { window.print(); }, 800);
 
         } catch(e) {
