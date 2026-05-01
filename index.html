@@ -31,16 +31,18 @@
         
         #adminPanel, #loginSection { margin-top: 20px; }
         
-        /* SABİT (STICKY) İŞLEM BARI STİLLERİ */
+        /* DÜZELTİLMİŞ SABİT (STICKY) İŞLEM BARI STİLLERİ */
         .sticky-actions-bar {
             position: sticky;
             top: 0;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            padding: 15px 0;
+            /* Konteynerin padding'ini telafi edip kenarlara tam yaslanması için */
+            margin: 0 -30px 20px -30px; 
+            padding: 15px 30px;
             z-index: 100;
-            border-bottom: 2px solid #eee;
-            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.05); /* Sabitlendiğinde alttaki projelerden ayrışsın */
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -56,11 +58,10 @@
             display: flex;
             gap: 8px;
             align-items: center;
-            overflow-x: auto; /* Çok dar ekranlarda yatay kaydırma sağlar */
-            padding-bottom: 5px; /* Kaydırma çubuğu için ufak boşluk */
+            overflow-x: auto;
+            padding-bottom: 5px;
         }
         
-        /* Butonların asla alt satıra düşmemesi için */
         .action-buttons-container button {
             white-space: nowrap;
             flex-shrink: 0;
@@ -116,6 +117,8 @@
     </div>
 
     <div id="adminPanel" style="display: none;">
+        
+        <!-- ÜST FORMLARIN BULUNDUĞU KUTU (Sabit bar dışarıda kalacak şekilde kapatıldı) -->
         <div class="no-print">
             <p style="text-align: center; color: #666;">Şenlik projelerini buradan ekleyebilir, düzenleyebilir ve ayarları yapabilirsiniz.</p>
             
@@ -153,21 +156,22 @@
                 </div>
                 <button id="ekleBtn" class="btn-success">Projeyi Ekle ve Karekod Üret</button>
             </div>
-            
-            <!-- SABİT (STICKY) İŞLEM BARI -->
-            <div class="sticky-actions-bar">
-                <h2>Mevcut Stantlar</h2>
-                <div class="action-buttons-container">
-                    <button id="selectAllBtn" class="btn-warning" style="width: auto; padding: 8px 15px;">Tümünü Seç</button>
-                    <button id="bulkMergeBtn" class="btn-success" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Birleştir (0)</button>
-                    <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Sil (0)</button>
-                    
-                    <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px;">Excel İndir</button>
-                    <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 15px;">Çıkış</button>
-                </div>
+        </div> <!-- no-print kapanışı -->
+
+        <!-- SABİT (STICKY) İŞLEM BARI -->
+        <div class="sticky-actions-bar no-print">
+            <h2>Mevcut Stantlar</h2>
+            <div class="action-buttons-container">
+                <button id="selectAllBtn" class="btn-warning" style="width: auto; padding: 8px 15px;">Tümünü Seç</button>
+                <button id="bulkMergeBtn" class="btn-success" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Birleştir (0)</button>
+                <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Sil (0)</button>
+                
+                <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px;">Excel İndir</button>
+                <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 15px;">Çıkış</button>
             </div>
         </div>
 
+        <!-- Proje Kartlarının Dizildiği Alan -->
         <div class="project-grid" id="projeListesi"></div>
     </div>
 </div>
@@ -542,7 +546,6 @@
     async function projeleriGetir() {
         const projeListesi = document.getElementById('projeListesi'); projeListesi.innerHTML = "<p><em>Veriler çekiliyor...</em></p>";
         
-        // Tabloyu yenilerken butonları sıfırlıyoruz
         toggleBulkActionsBtn(); 
         
         try {
