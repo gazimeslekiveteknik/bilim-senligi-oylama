@@ -14,7 +14,7 @@
         .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
         h1, h2 { color: #333; text-align: center; }
         .form-group { margin-bottom: 15px; }
-        input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; font-size: 15px; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="number"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; font-size: 15px; }
         
         button { padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.3s; font-weight: 600; width: 100%; }
         .btn-success { background-color: #28a745; color: white; }
@@ -52,99 +52,25 @@
 
         /* =========================================
            YAZDIRMA (PRINT) CSS KURALLARI 
-           (A4 Yatay, Ortadan Katlamalı Masa İsimliği)
            ========================================= */
         @media print { 
-            @page { 
-                size: A4 landscape; /* A4 Yatay Format */
-                margin: 0; /* Tarayıcının tarih/url basmasını engeller */
-            }
-            
+            @page { size: A4 landscape; margin: 0; }
             body { background-color: white; padding: 0; margin: 0; }
-            .container { display: none !important; } /* Arayüzü tamamen gizle */
-            
-            #printArea { 
-                display: flex !important; 
-                flex-direction: column; 
-                width: 100vw; 
-                height: 100vh; 
-                background: white;
-            }
-
-            .print-half {
-                flex: 1; /* Sayfayı tam ikiye böler (50% - 50%) */
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 40px 80px; /* Kenar boşlukları */
-                box-sizing: border-box;
-            }
-
-            /* Katlandığında düz durması için üst yarıyı 180 derece döndürüyoruz */
-            .print-top-half {
-                transform: rotate(180deg);
-                border-top: 1px dashed #bbb; /* Katlama çizgisi */
-            }
-            
-            /* Konteyner Sorgusu (Container Queries) ile Otomatik Sığdırma Altyapısı */
-            .print-text-container {
-                flex: 1;
-                padding-right: 50px;
-                text-align: left;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                container-type: inline-size; /* İçeriğin genişliğe göre ölçeklenmesini sağlar */
-            }
-
-            .print-proje-adi {
-                font-size: 55px; /* En büyük başlık */
-                font-weight: 900;
-                color: #000;
-                line-height: 1.1;
-                margin-bottom: 12px;
-                text-transform: uppercase;
-                word-break: break-word;
-            }
-
-            .print-grup-adi {
-                font-size: 34px; /* Orta büyüklük */
-                font-weight: 700;
-                color: #333;
-                margin-bottom: 8px;
-            }
-
-            .print-ogrenci-adi {
-                /* Font boyutunu konteynerin genişliğine göre otomatik hesapla (min: 16px, max: 24px) */
-                font-size: clamp(16px, 4cqw, 24px); 
-                font-weight: 600;
-                color: #666;
-                line-height: 1.3;
-                text-wrap: balance; /* Taşan isimleri estetik biçimde alt satıra yayar */
-            }
-
-            .print-qr-container {
-                width: 250px;
-                height: 250px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border: 4px solid #000; /* QR çerçevesi */
-                padding: 15px;
-                flex-shrink: 0;
-            }
-
-            .print-qr-container img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
+            .container { display: none !important; } 
+            #printArea { display: flex !important; flex-direction: column; width: 100vw; height: 100vh; background: white; }
+            .print-half { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 40px 80px; box-sizing: border-box; }
+            .print-top-half { transform: rotate(180deg); border-top: 1px dashed #bbb; }
+            .print-text-container { flex: 1; padding-right: 50px; text-align: left; display: flex; flex-direction: column; justify-content: center; container-type: inline-size; }
+            .print-proje-adi { font-size: 55px; font-weight: 900; color: #000; line-height: 1.1; margin-bottom: 12px; text-transform: uppercase; word-break: break-word; }
+            .print-grup-adi { font-size: 34px; font-weight: 700; color: #333; margin-bottom: 8px; }
+            .print-ogrenci-adi { font-size: clamp(16px, 4cqw, 24px); font-weight: 600; color: #666; line-height: 1.3; text-wrap: balance; }
+            .print-qr-container { width: 250px; height: 250px; display: flex; align-items: center; justify-content: center; border: 4px solid #000; padding: 15px; flex-shrink: 0; }
+            .print-qr-container img { width: 100%; height: 100%; object-fit: contain; }
         }
     </style>
 </head>
 <body>
 
-<!-- MASA İSİMLİĞİ YAZDIRMA ŞABLONU (Arka planda çalışır) -->
 <div id="printArea"></div>
 
 <div class="container">
@@ -161,7 +87,20 @@
     <!-- Yönetici Paneli -->
     <div id="adminPanel" style="display: none;">
         <div class="no-print">
-            <p style="text-align: center; color: #666;">Şenlik projelerini buradan ekleyebilir, düzenleyebilir ve barkod çıktılarını alabilirsiniz.</p>
+            <p style="text-align: center; color: #666;">Şenlik projelerini buradan ekleyebilir, düzenleyebilir ve ayarları yapabilirsiniz.</p>
+            
+            <!-- SİSTEM AYARLARI KUTUSU -->
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #ffc107;">
+                <h3 style="margin-top: 0; color: #856404; font-size: 16px;">⚙️ Sistem Ayarları</h3>
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <label for="oyLimiti" style="font-weight: 600; color: #555;">Kişi Başı Günlük Oy Hakkı:</label>
+                    <input type="number" id="oyLimiti" value="2" min="1" max="20" style="width: 80px; padding: 10px; margin: 0; text-align: center; font-weight: bold;">
+                    <button id="kaydetAyarBtn" class="btn-warning" style="width: auto; padding: 10px 25px;">Ayarı Güncelle</button>
+                </div>
+                <p style="margin: 8px 0 0 0; font-size: 13px; color: #856404;">Bu limit anında tüm katılımcıların oylama ekranlarına dinamik olarak yansıyacaktır.</p>
+            </div>
+
+            <!-- PROJE EKLEME KUTUSU -->
             <div style="background: #eef2f5; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin-top: 0;">Yeni Proje Ekle</h3>
                 <div class="form-group">
@@ -193,7 +132,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { 
-        getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, updateDoc, doc 
+        getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, updateDoc, doc, setDoc, getDoc 
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { 
         getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut 
@@ -216,16 +155,37 @@
     const loginSection = document.getElementById('loginSection');
     const adminPanel = document.getElementById('adminPanel');
 
-    // Dinamik URL Algılama (Oylama sayfası için)
-    function getOylamaUrl(id) {
-        return new URL(`oyla.html?id=${id}`, window.location.href).href;
+    function getOylamaUrl(id) { return new URL(`oyla.html?id=${id}`, window.location.href).href; }
+
+    // AYARLARI ÇEK
+    async function ayarlariGetir() {
+        try {
+            const docSnap = await getDoc(doc(db, "ayarlar", "genel"));
+            if (docSnap.exists() && docSnap.data().gunlukOyHakki) {
+                document.getElementById('oyLimiti').value = docSnap.data().gunlukOyHakki;
+            }
+        } catch (e) { console.error("Ayar çekilemedi", e); }
     }
+
+    // AYARLARI KAYDET
+    document.getElementById('kaydetAyarBtn').addEventListener('click', async () => {
+        const limit = parseInt(document.getElementById('oyLimiti').value);
+        if (!limit || limit < 1) return Swal.fire('Hata', 'Geçerli bir sayı girin.', 'warning');
+        
+        try {
+            await setDoc(doc(db, "ayarlar", "genel"), { gunlukOyHakki: limit }, { merge: true });
+            Swal.fire({ icon: 'success', title: 'Ayarlar Kaydedildi', text: `Katılımcıların günlük oy limiti ${limit} olarak güncellendi.`, timer: 2000 });
+        } catch (e) {
+            Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error');
+        }
+    });
 
     // OTURUM KONTROLÜ
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loginSection.style.display = 'none';
             adminPanel.style.display = 'block';
+            ayarlariGetir(); // Giriş yapıldığında limit ayarlarını getir
             projeleriGetir();
         } else {
             loginSection.style.display = 'block';
@@ -233,53 +193,38 @@
         }
     });
 
-    // GİRİŞ YAPMA
     document.getElementById('loginBtn').addEventListener('click', async () => {
         const email = document.getElementById('loginEmail').value.trim();
         const pass = document.getElementById('loginPassword').value.trim();
         if(!email || !pass) return Swal.fire('Uyarı', 'Lütfen e-posta ve şifrenizi girin.', 'warning');
-        try {
-            await signInWithEmailAndPassword(auth, email, pass);
-            document.getElementById('loginPassword').value = '';
-        } catch (error) {
-            Swal.fire('Giriş Başarısız', 'Bilgilerinizi kontrol edip tekrar deneyin.', 'error');
-        }
+        try { await signInWithEmailAndPassword(auth, email, pass); document.getElementById('loginPassword').value = ''; } 
+        catch (error) { Swal.fire('Giriş Başarısız', 'Bilgilerinizi kontrol edip tekrar deneyin.', 'error'); }
     });
 
-    // ÇIKIŞ YAPMA
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        Swal.fire({
-            title: 'Çıkış Yapılıyor', text: "Oturumu kapatmak istediğinize emin misiniz?", icon: 'question',
-            showCancelButton: true, confirmButtonText: 'Evet, Kapat', cancelButtonText: 'İptal'
+        Swal.fire({ title: 'Çıkış Yapılıyor', text: "Oturumu kapatmak istediğinize emin misiniz?", icon: 'question', showCancelButton: true, confirmButtonText: 'Evet, Kapat', cancelButtonText: 'İptal'
         }).then((result) => { if (result.isConfirmed) signOut(auth); });
     });
 
-    // EXCEL (CSV) ÇIKTISI ALMA FONKSİYONU
+    // EXCEL (CSV) ÇIKTISI
     document.getElementById('exportBtn').addEventListener('click', async () => {
         try {
             const q = query(collection(db, "projeler"), orderBy("toplam_ham_puan", "desc"));
             const querySnapshot = await getDocs(q);
-            
-            // UTF-8 BOM ekleyerek Excel'de Türkçe karakterlerin düzgün görünmesini sağlıyoruz
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
             csvContent += "Sıra,Proje Adı,Grup Adı,Öğrenci İsimleri,Toplam Oy,Toplam Ham Puan,Ortalama\n";
-            
             let sira = 1;
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const toplamOy = data.toplam_oy_sayisi || 0;
                 const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
-                
-                // Güvenli string manipülasyonu
                 const proje = `"${(data.proje_adi || "").replace(/"/g, '""')}"`;
                 const grup = `"${(data.grup_adi || "").replace(/"/g, '""')}"`;
                 const ogrenci = `"${(data.ogrenci_adi || "").replace(/"/g, '""')}"`;
-                
                 csvContent += `${sira},${proje},${grup},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`;
                 sira++;
             });
-            
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -287,28 +232,21 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        } catch (e) {
-            Swal.fire('Hata', 'Veriler dışa aktarılırken bir sorun oluştu.', 'error');
-        }
+        } catch (e) { Swal.fire('Hata', 'Veriler dışa aktarılırken bir sorun oluştu.', 'error'); }
     });
 
-    // PROJE SİLME FONKSİYONU
+    // PROJE SİL
     window.projeSil = async function(id) {
-        Swal.fire({
-            title: 'Emin misiniz?', text: "Bu proje silinecek ve kayıtlı olan TÜM OYLAR kaybolacaktır!", icon: 'warning',
-            showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Evet, Kalıcı Olarak Sil', cancelButtonText: 'İptal'
+        Swal.fire({ title: 'Emin misiniz?', text: "Bu proje silinecek ve kayıtlı olan TÜM OYLAR kaybolacaktır!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Evet, Kalıcı Olarak Sil', cancelButtonText: 'İptal'
         }).then(async (result) => {
             if (result.isConfirmed) {
-                try {
-                    await deleteDoc(doc(db, "projeler", id));
-                    Swal.fire('Silindi!', 'Proje başarıyla sistemden kaldırıldı.', 'success');
-                    projeleriGetir();
-                } catch (e) { Swal.fire('Hata!', 'Yetkinizi kontrol edin.', 'error'); }
+                try { await deleteDoc(doc(db, "projeler", id)); Swal.fire('Silindi!', 'Proje kaldırıldı.', 'success'); projeleriGetir(); } 
+                catch (e) { Swal.fire('Hata!', 'Yetkinizi kontrol edin.', 'error'); }
             }
         });
     }
 
-    // PROJE DÜZENLEME FONKSİYONU
+    // PROJE DÜZENLE
     window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutOgrenci) {
         const { value: formValues } = await Swal.fire({
             title: 'Projeyi Düzenle',
@@ -316,71 +254,41 @@
                   `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` +
                   `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri" value="${mevcutOgrenci}">`,
             focusConfirm: false, showCancelButton: true, confirmButtonText: 'Güncelle', cancelButtonText: 'İptal',
-            preConfirm: () => [
-                document.getElementById('swal-input1').value.trim(), 
-                document.getElementById('swal-input2').value.trim(),
-                document.getElementById('swal-input3').value.trim()
-            ]
+            preConfirm: () => [ document.getElementById('swal-input1').value.trim(), document.getElementById('swal-input2').value.trim(), document.getElementById('swal-input3').value.trim() ]
         });
 
         if (formValues) {
             const [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
             if (!yeniProjeAdi || !yeniGrupAdi || !yeniOgrenciAdi) return Swal.fire('Hata', 'Alanlar boş bırakılamaz.', 'error');
             try {
-                await updateDoc(doc(db, "projeler", id), { 
-                    proje_adi: yeniProjeAdi, 
-                    grup_adi: yeniGrupAdi,
-                    ogrenci_adi: yeniOgrenciAdi 
-                });
+                await updateDoc(doc(db, "projeler", id), { proje_adi: yeniProjeAdi, grup_adi: yeniGrupAdi, ogrenci_adi: yeniOgrenciAdi });
                 Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false });
                 projeleriGetir();
             } catch (error) { Swal.fire('Hata', 'Güncelleme işlemi başarısız oldu.', 'error'); }
         }
     }
 
-    // TEKLİ MASA İSİMLİĞİ YAZDIRMA FONKSİYONU
+    // MASA İSİMLİĞİ YAZDIR
     window.masaIsimligiYazdir = function(projeAdi, grupAdi, ogrenciAdi, id) {
         const printArea = document.getElementById('printArea');
         const oylamaLinki = getOylamaUrl(id);
         
-        // Şablonu Print Alanına Bas (Simetrik üst ve alt kısımlar)
         printArea.innerHTML = `
             <div class="print-half print-top-half">
-                <div class="print-text-container">
-                    <div class="print-proje-adi">${projeAdi}</div>
-                    <div class="print-grup-adi">${grupAdi}</div>
-                    <div class="print-ogrenci-adi">${ogrenciAdi}</div>
-                </div>
+                <div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div>
                 <div class="print-qr-container" id="qr-top"></div>
             </div>
             <div class="print-half print-bottom-half">
-                <div class="print-text-container">
-                    <div class="print-proje-adi">${projeAdi}</div>
-                    <div class="print-grup-adi">${grupAdi}</div>
-                    <div class="print-ogrenci-adi">${ogrenciAdi}</div>
-                </div>
+                <div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div>
                 <div class="print-qr-container" id="qr-bottom"></div>
             </div>
         `;
-
-        // Yüksek çözünürlüklü QR kodları render et
-        new QRCode(document.getElementById("qr-top"), {
-            text: oylamaLinki, width: 256, height: 256,
-            colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
-        });
-
-        new QRCode(document.getElementById("qr-bottom"), {
-            text: oylamaLinki, width: 256, height: 256,
-            colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
-        });
-
-        // QR kodların çizilmesi için 300ms bekleyip yazdır ekranını aç
-        setTimeout(() => {
-            window.print();
-        }, 300);
+        new QRCode(document.getElementById("qr-top"), { text: oylamaLinki, width: 256, height: 256, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H });
+        new QRCode(document.getElementById("qr-bottom"), { text: oylamaLinki, width: 256, height: 256, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H });
+        setTimeout(() => { window.print(); }, 300);
     }
 
-    // PROJELERİ LİSTELEME VE HESAPLAMA
+    // PROJELERİ GETİR
     async function projeleriGetir() {
         const projeListesi = document.getElementById('projeListesi');
         projeListesi.innerHTML = "<p><em>Veriler veritabanından çekiliyor...</em></p>";
@@ -388,105 +296,58 @@
         try {
             const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc"));
             const querySnapshot = await getDocs(q);
-            let htmlStr = "";
-            let qrData = []; 
-
+            let htmlStr = ""; let qrData = []; 
             if (querySnapshot.empty) return projeListesi.innerHTML = "<p>Henüz sisteme kayıtlı bir stant bulunmuyor.</p>";
 
             querySnapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const id = docSnap.id;
-                
-                // İstatistik Hesaplamaları 
-                const toplamOy = data.toplam_oy_sayisi || 0;
-                const toplamPuan = data.toplam_ham_puan || 0;
+                const data = docSnap.data(); const id = docSnap.id;
+                const toplamOy = data.toplam_oy_sayisi || 0; const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
                 
-                // Güvenli tırnak temizliği 
                 const safeProje = (data.proje_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
                 const safeGrup = (data.grup_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
                 const safeOgrenci = (data.ogrenci_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
                 qrData.push({ id: id, link: getOylamaUrl(id) });
-
                 htmlStr += `
                     <div class="project-card">
                         <div>
                             <h3>${data.proje_adi}</h3>
                             <div class="grup-title">${data.grup_adi || "-"}</div>
                             <p>${data.ogrenci_adi}</p>
-                            
                             <div class="stats-box no-print">
-                                <div class="stat-item">
-                                    <span>Toplam Oy</span>
-                                    <strong>${toplamOy}</strong>
-                                </div>
-                                <div class="stat-item" style="border-left: 2px solid #ddd; padding-left: 15px;">
-                                    <span>Ort. Puan</span>
-                                    <strong>⭐ ${ortalama}</strong>
-                                </div>
+                                <div class="stat-item"><span>Toplam Oy</span><strong>${toplamOy}</strong></div>
+                                <div class="stat-item" style="border-left: 2px solid #ddd; padding-left: 15px;"><span>Ort. Puan</span><strong>⭐ ${ortalama}</strong></div>
                             </div>
                             <div id="qr-${id}" class="qr-container"></div>
                         </div>
-                        
                         <div class="card-actions no-print">
                             <button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeOgrenci}')">Projeyi Düzenle</button>
                             <button class="btn-primary" onclick="masaIsimligiYazdir('${safeProje}', '${safeGrup}', '${safeOgrenci}', '${id}')">Masa İsimliği Yazdır</button>
                             <button class="btn-danger" onclick="projeSil('${id}')">Projeyi Sil</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-
             projeListesi.innerHTML = htmlStr;
-
-            // DOM oluştuktan sonra İstemci Taraflı (Local) QR kodları basıyoruz
-            qrData.forEach(item => {
-                new QRCode(document.getElementById(`qr-${item.id}`), {
-                    text: item.link, width: 140, height: 140,
-                    colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
-                });
-            });
-
-        } catch (e) {
-            console.error("Hata:", e);
-            projeListesi.innerHTML = "<p style='color:red;'>Veriler alınırken bir hata oluştu.</p>";
-        }
+            qrData.forEach(item => { new QRCode(document.getElementById(`qr-${item.id}`), { text: item.link, width: 140, height: 140, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H }); });
+        } catch (e) { projeListesi.innerHTML = "<p style='color:red;'>Veriler alınırken bir hata oluştu.</p>"; }
     }
 
-    // YENİ PROJE EKLEME
+    // YENİ PROJE EKLE
     document.getElementById('ekleBtn').addEventListener('click', async () => {
         const pAdi = document.getElementById('projeAdi').value.trim();
         const gAdi = document.getElementById('grupAdi').value.trim();
         const oAdi = document.getElementById('ogrenciAdi').value.trim();
-
         if (!pAdi || !gAdi || !oAdi) return Swal.fire('Eksik Bilgi', 'Lütfen tüm alanları doldurun.', 'info');
 
-        document.getElementById('ekleBtn').disabled = true;
-        document.getElementById('ekleBtn').innerText = "Ekleniyor...";
-
+        document.getElementById('ekleBtn').disabled = true; document.getElementById('ekleBtn').innerText = "Ekleniyor...";
         try {
-            await addDoc(collection(db, "projeler"), {
-                proje_adi: pAdi,
-                grup_adi: gAdi,
-                ogrenci_adi: oAdi,
-                toplam_ham_puan: 0,
-                toplam_oy_sayisi: 0,
-                eklenme_tarihi: new Date()
-            });
-            
-            document.getElementById('projeAdi').value = "";
-            document.getElementById('grupAdi').value = "";
-            document.getElementById('ogrenciAdi').value = "";
-            
+            await addDoc(collection(db, "projeler"), { proje_adi: pAdi, grup_adi: gAdi, ogrenci_adi: oAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() });
+            document.getElementById('projeAdi').value = ""; document.getElementById('grupAdi').value = ""; document.getElementById('ogrenciAdi').value = "";
             Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje sisteme eklendi.', timer: 2000, showConfirmButton: false });
             projeleriGetir();
-        } catch (e) {
-            Swal.fire('Hata', 'Proje eklenirken bir sorun oluştu.', 'error');
-        } finally {
-            document.getElementById('ekleBtn').disabled = false;
-            document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret";
-        }
+        } catch (e) { Swal.fire('Hata', 'Proje eklenirken bir sorun oluştu.', 'error'); } 
+        finally { document.getElementById('ekleBtn').disabled = false; document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret"; }
     });
 </script>
 </body>
