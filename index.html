@@ -45,30 +45,17 @@
             align-items: center;
         }
 
-        .sticky-actions-bar h2 {
-            margin: 0;
-            font-size: 22px;
-            white-space: nowrap;
-        }
+        .sticky-actions-bar h2 { margin: 0; font-size: 22px; white-space: nowrap; }
 
-        .action-buttons-container {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }
-        
-        .action-buttons-container button {
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
+        .action-buttons-container { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding-bottom: 5px; }
+        .action-buttons-container button { white-space: nowrap; flex-shrink: 0; }
         
         .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .project-card { position: relative; border: 1px solid #e0e0e0; padding: 20px; text-align: center; border-radius: 8px; background-color: #fafafa; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
         .project-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .project-card h3 { font-size: 18px; margin-bottom: 5px; color: #222; min-height: 44px;}
         .project-card .grup-title { font-size: 14px; font-weight: bold; color: #444; margin-bottom: 5px; }
+        .project-card .day-title { font-size: 13px; font-weight: bold; color: #e30a17; margin-bottom: 5px; }
         .project-card p { font-size: 13px; color: #666; margin-bottom: 15px; }
         
         .project-checkbox { position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; cursor: pointer; accent-color: #dc3545; }
@@ -83,11 +70,15 @@
 
         #printArea { display: none; }
 
+        /* ==================== YAZDIRMA (PRINT) ALANI ==================== */
         @media print { 
-            @page { size: A4 landscape; margin: 0; }
+            @page { margin: 0; } /* Tarayıcı eklerini (Tarih, URL) gizlemek için */
             body { background-color: white; padding: 0; margin: 0; }
             .container { display: none !important; } 
-            #printArea { display: flex !important; flex-direction: column; width: 100vw; height: 100vh; background: white; }
+
+            /* 1. MASA İSİMLİĞİ MODU (A4 Yatay, Ortadan Katlamalı) */
+            body.mode-masa #printArea { display: flex !important; flex-direction: column; width: 100vw; height: 100vh; background: white; }
+            body.mode-masa @page { size: A4 landscape; }
             .print-half { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 40px 80px; box-sizing: border-box; }
             .print-top-half { transform: rotate(180deg); border-top: 1px dashed #bbb; }
             .print-text-container { flex: 1; padding-right: 50px; text-align: left; display: flex; flex-direction: column; justify-content: center; container-type: inline-size; }
@@ -96,6 +87,18 @@
             .print-ogrenci-adi { font-size: clamp(16px, 4cqw, 24px); font-weight: 600; color: #666; line-height: 1.3; text-wrap: balance; }
             .print-qr-container { width: 250px; height: 250px; display: flex; align-items: center; justify-content: center; border: 4px solid #000; padding: 15px; flex-shrink: 0; }
             .print-qr-container img { width: 100%; height: 100%; object-fit: contain; }
+
+            /* 2. TOPLU LİSTE (KATALOG) MODU (A4 Dikey, Izgara Şeklinde) */
+            body.mode-liste #printArea { display: block !important; width: 100%; padding: 30px; background: white; box-sizing: border-box;}
+            body.mode-liste @page { size: A4 portrait; margin: 15mm; }
+            .print-day-section { margin-bottom: 40px; }
+            .print-day-title { font-size: 24px; font-weight: 900; border-bottom: 3px solid #000; padding-bottom: 5px; margin-bottom: 20px; color: #111; }
+            .print-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .print-list-item { border: 2px solid #ddd; border-radius: 12px; padding: 15px; text-align: center; break-inside: avoid; page-break-inside: avoid; display: flex; flex-direction: column; align-items: center; }
+            .print-list-item h4 { margin: 0 0 10px 0; font-size: 14px; font-weight: 900; color: #000; }
+            .print-list-item p { margin: 2px 0; font-size: 11px; color: #444; }
+            .print-list-qr { margin-top: 15px; border: 2px solid #000; padding: 5px; border-radius: 8px; }
+            .print-list-qr img { width: 100px; height: 100px; object-fit: contain; }
         }
     </style>
 </head>
@@ -131,7 +134,7 @@
                 <h3 style="margin-top: 0; color: #383d41; font-size: 16px;">📥 Google Tablolardan Toplu İçe Aktarım</h3>
                 <p style="font-size: 13px; color: #555; margin-bottom: 15px;">
                     Google Form yanıtlarınızı sisteme topluca çekmek için, Google Tablonuzu açıp <strong>Dosya &gt; Paylaş &gt; Web'de Yayınla</strong> menüsünden <strong>"Virgülle ayrılmış değerler (.csv)"</strong> seçeneği ile yayınlayın.<br>
-                    <em>* Başarıyla aktarım yaptığınız link sistemde kalıcı olarak saklanacaktır. Öğrenci isimleri otomatik olarak "Ad SOYAD" formatına dönüştürülür ve tekrarlayan isimler temizlenir.</em>
+                    <em>* Başarıyla aktarım yaptığınız link sistemde kalıcı olarak saklanacaktır.</em>
                 </p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="sheetCsvLink" placeholder="Google Tablolar CSV Yayın Linki (https://docs.google.com/spreadsheets/.../pub?output=csv)" style="margin-bottom: 0; flex: 1; min-width: 250px;">
@@ -147,6 +150,10 @@
                 <div class="form-group">
                     <input type="text" id="grupAdi" placeholder="Grup Adı (Örn: Robotik Kulübü veya 11/A Sınıfı)">
                 </div>
+                <!-- YENİ: Sunum Günü Alanı Eklendi -->
+                <div class="form-group">
+                    <input type="text" id="sunumGunu" placeholder="Sunum Günü (Örn: 1. Gün veya 19 Mayıs)">
+                </div>
                 <div class="form-group">
                     <input type="text" id="ogrenciAdi" placeholder="Öğrenci İsimleri (Örn: Ahmet YILMAZ - Ayşe KAYA)">
                 </div>
@@ -161,6 +168,8 @@
                 <button id="bulkMergeBtn" class="btn-success" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Birleştir (0)</button>
                 <button id="bulkDeleteBtn" class="btn-danger" style="width: auto; padding: 8px 15px; display: none;">Seçilenleri Sil (0)</button>
                 
+                <!-- YENİ: Toplu Karekod Liste Butonu -->
+                <button id="printAllQRsBtn" class="btn-primary" style="width: auto; padding: 8px 15px; border-left: 2px solid rgba(255,255,255,0.3); margin-left: 5px;">Toplu Katalog (PDF / Yazdır)</button>
                 <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px;">Excel İndir</button>
                 <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 15px;">Çıkış</button>
             </div>
@@ -197,6 +206,12 @@
 
     function getOylamaUrl(id) { return new URL(`oyla.html?id=${id}`, window.location.href).href; }
 
+    // Yazdırma İşlemi Bitince Sayfayı Eski Haline Getirme Tetikleyicisi
+    window.addEventListener('afterprint', () => {
+        document.body.className = '';
+        document.getElementById('printArea').innerHTML = '';
+    });
+
     async function ayarlariGetir() {
         try {
             const docSnap = await getDoc(doc(db, "ayarlar", "genel"));
@@ -217,11 +232,9 @@
         } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu. Yetkinizi kontrol edin.', 'error'); }
     });
 
-    // --- YENİ: METİN FORMATLAMA VE TEKİLLEŞTİRME (TİRE İLE AYIRMA) ---
-    
+    // Metin Formatlama
     function formatOgrenciAdi(metin) {
         if (!metin) return "";
-        // Virgül veya tire (ve etrafındaki olası boşluklar) ile ayrılmış metni parçala
         let isimler = metin.split(/[,|-]+/).map(isim => {
             let parcalar = isim.trim().split(/\s+/);
             if (parcalar.length === 0 || parcalar[0] === "") return "";
@@ -234,32 +247,41 @@
             return adlar.join(' ') + ' ' + soyad;
         }).filter(i => i !== "");
 
-        // Tekrarlayan isimleri sil
         let benzersizIsimler = [...new Set(isimler)];
-        
-        // İsimleri virgül yerine TİRE (-) ve boşluk ile birleştir
         return benzersizIsimler.join(' - ');
     }
 
-    // Proje Adı Formatlama (TÜMÜ BÜYÜK HARF)
     function formatProjeAdi(metin) {
         if (!metin) return "";
         return metin.toLocaleUpperCase('tr-TR');
     }
 
-    // Tablolardan çekerken gereksiz parantez ve tireleri temizleyip büyük harfe çevirme
     function temizleBaslik(text) {
         if(!text) return "";
         let t = text.replace(/\(.*\)/g, '').split('-')[0].trim();
         return formatProjeAdi(t);
     }
-    // --------------------------------------------
 
+    // TABLODAN TOPLU İÇE AKTARIM (Sorarak Gün Belirleme)
     document.getElementById('importSheetBtn').addEventListener('click', async () => {
         const csvUrl = document.getElementById('sheetCsvLink').value.trim();
         if (!csvUrl || !csvUrl.includes('pub?output=csv')) {
             return Swal.fire('Hatalı Link', 'Lütfen Google Tablolardan aldığınız doğru ".csv" yayın linkini yapıştırın.', 'warning');
         }
+
+        // Kullanıcıya bu projelerin Hangi Güne ait olduğunu soralım
+        const { value: selectedDay } = await Swal.fire({
+            title: 'Hangi Güne Eklensin?',
+            input: 'text',
+            inputLabel: 'Toplu eklenecek bu projelerin sunum günü (Opsiyonel)',
+            inputPlaceholder: 'Örn: 1. Gün veya Salı',
+            showCancelButton: true,
+            confirmButtonText: 'Aktarımı Başlat',
+            cancelButtonText: 'İptal'
+        });
+
+        if (selectedDay === undefined) return; // İptale basıldıysa işlemi durdur.
+        const importDay = selectedDay.trim();
 
         document.getElementById('importSheetBtn').disabled = true;
         document.getElementById('importSheetBtn').innerText = "Veriler Çekiliyor...";
@@ -276,15 +298,12 @@
                 }
 
                 await setDoc(doc(db, "ayarlar", "genel"), { googleSheetsLink: csvUrl }, { merge: true });
-
                 document.getElementById('importSheetBtn').innerText = "İşleniyor...";
 
                 const existingSnapshot = await getDocs(collection(db, "projeler"));
                 const existingKeys = new Set();
                 existingSnapshot.forEach(doc => {
-                    if(doc.data().proje_adi) {
-                        existingKeys.add(normalizeProjectName(doc.data().proje_adi));
-                    }
+                    if(doc.data().proje_adi) existingKeys.add(normalizeProjectName(doc.data().proje_adi));
                 });
 
                 const projelerMap = new Map();
@@ -320,12 +339,11 @@
                     let eklenenSayi = 0;
                     
                     for (let [key, pData] of projelerMap) {
-                        // Virgüle veya tireye böleceği için join içine ne attığımızın önemi yok
                         const ogrenciMetni = formatOgrenciAdi(pData.ogrenciler.join(" - ")); 
-                        
                         await addDoc(collection(db, "projeler"), {
                             proje_adi: pData.proje_adi,
                             grup_adi: "",
+                            sunum_gunu: importDay, // YENİ: Toplu eklemede günü kaydediyoruz
                             ogrenci_adi: ogrenciMetni,
                             toplam_ham_puan: 0,
                             toplam_oy_sayisi: 0,
@@ -381,17 +399,20 @@
 
     document.getElementById('exportBtn').addEventListener('click', async () => {
         try {
-            const q = query(collection(db, "projeler"), orderBy("toplam_ham_puan", "desc"));
+            const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc"));
             const querySnapshot = await getDocs(q);
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
-            csvContent += "Sıra,Proje Adı,Grup Adı,Öğrenci İsimleri,Toplam Oy,Toplam Ham Puan,Ortalama\n";
+            csvContent += "Sıra,Sunum Günü,Proje Adı,Grup Adı,Öğrenci İsimleri,Toplam Oy,Toplam Ham Puan,Ortalama\n";
             let sira = 1;
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const toplamOy = data.toplam_oy_sayisi || 0; const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
-                const proje = `"${(data.proje_adi || "").replace(/"/g, '""')}"`; const grup = `"${(data.grup_adi || "").replace(/"/g, '""')}"`; const ogrenci = `"${(data.ogrenci_adi || "").replace(/"/g, '""')}"`;
-                csvContent += `${sira},${proje},${grup},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`; sira++;
+                const gun = `"${(data.sunum_gunu || "").replace(/"/g, '""')}"`;
+                const proje = `"${(data.proje_adi || "").replace(/"/g, '""')}"`; 
+                const grup = `"${(data.grup_adi || "").replace(/"/g, '""')}"`; 
+                const ogrenci = `"${(data.ogrenci_adi || "").replace(/"/g, '""')}"`;
+                csvContent += `${sira},${gun},${proje},${grup},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`; sira++;
             });
             const encodedUri = encodeURI(csvContent); const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "bilim_senligi_sonuclari.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         } catch (e) { Swal.fire('Hata', 'Dışa aktarılırken sorun oluştu.', 'error'); }
@@ -413,9 +434,7 @@
     });
 
     document.getElementById('projeListesi').addEventListener('change', (e) => {
-        if(e.target.classList.contains('project-checkbox')) {
-            toggleBulkActionsBtn();
-        }
+        if(e.target.classList.contains('project-checkbox')) toggleBulkActionsBtn();
     });
 
     function toggleBulkActionsBtn() {
@@ -426,7 +445,6 @@
         if(checkedCount > 0) {
             bulkDelBtn.style.display = 'inline-block';
             bulkDelBtn.innerText = `Seçilenleri Sil (${checkedCount})`;
-            
             if(checkedCount > 1) {
                 bulkMergeBtn.style.display = 'inline-block';
                 bulkMergeBtn.innerText = `Seçilenleri Birleştir (${checkedCount})`;
@@ -478,8 +496,6 @@
             }
             Swal.close();
 
-            if(projectsData.length < 2) return Swal.fire('Hata', 'Birleştirilecek yeterli proje bulunamadı.', 'error');
-
             let inputOptions = {};
             projectsData.forEach((p, index) => {
                 inputOptions[index] = `${p.proje_adi} ${p.grup_adi ? '(Grup: ' + p.grup_adi + ')' : ''}`;
@@ -509,7 +525,6 @@
 
                 projectsData.forEach(p => {
                     if(p.ogrenci_adi) {
-                        // Veritabanında tireli (-) durduğu için tireden de parçalayıp küme listesine yolluyoruz
                         p.ogrenci_adi.split(/[,|-]+/).forEach(s => {
                             let st = s.trim();
                             if(st && !mergedOgrenci.includes(st)) { mergedOgrenci.push(st); }
@@ -519,7 +534,6 @@
                     totalPuan += (p.toplam_ham_puan || 0);
                 });
 
-                // Toparladığımız isimleri tekrar tireli temiz formata oturtuyoruz
                 let finalOgrenciStr = formatOgrenciAdi(mergedOgrenci.join(' - ')); 
 
                 Swal.fire({ title: 'Birleştiriliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
@@ -536,35 +550,50 @@
                     }
                 }
 
-                Swal.fire('Başarılı!', 'Projeler, oyları korunarak başarıyla tek çatı altında birleştirildi.', 'success');
+                Swal.fire('Başarılı!', 'Projeler başarıyla tek çatı altında birleştirildi.', 'success');
                 projeleriGetir();
             }
-
-        } catch (e) {
-            console.error(e);
-            Swal.fire('Hata!', 'Birleştirme işlemi sırasında bir sorun oluştu.', 'error');
-        }
+        } catch (e) { console.error(e); Swal.fire('Hata!', 'Birleştirme işlemi sırasında bir sorun oluştu.', 'error'); }
     });
 
-    window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutOgrenci) {
+    // YENİ EKLENEN: GÜN (SUNUM) ALANI İLE BİRLİKTE DÜZENLEME
+    window.projeDuzenle = async function(id, mevcutAdi, mevcutGrup, mevcutGunu, mevcutOgrenci) {
         const { value: formValues } = await Swal.fire({
             title: 'Projeyi Düzenle',
-            html: `<input id="swal-input1" class="swal2-input" placeholder="Proje Adı" value="${mevcutAdi}">` + `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` + `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri (Örn: Ahmet YILMAZ - Ayşe KAYA)" value="${mevcutOgrenci}">`,
+            html: `<input id="swal-input1" class="swal2-input" placeholder="Proje Adı" value="${mevcutAdi}">` + 
+                  `<input id="swal-input2" class="swal2-input" placeholder="Grup Adı" value="${mevcutGrup}">` + 
+                  `<input id="swal-input4" class="swal2-input" placeholder="Sunum Günü (Örn: 1. Gün)" value="${mevcutGunu}">` + 
+                  `<input id="swal-input3" class="swal2-input" placeholder="Öğrenci İsimleri" value="${mevcutOgrenci}">`,
             focusConfirm: false, showCancelButton: true, confirmButtonText: 'Güncelle', cancelButtonText: 'İptal',
-            preConfirm: () => [ document.getElementById('swal-input1').value.trim(), document.getElementById('swal-input2').value.trim(), document.getElementById('swal-input3').value.trim() ]
+            preConfirm: () => [ 
+                document.getElementById('swal-input1').value.trim(), 
+                document.getElementById('swal-input2').value.trim(), 
+                document.getElementById('swal-input3').value.trim(),
+                document.getElementById('swal-input4').value.trim()
+            ]
         });
         if (formValues) {
-            let [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi] = formValues;
-            
+            let [yeniProjeAdi, yeniGrupAdi, yeniOgrenciAdi, yeniSunumGunu] = formValues;
             const formatliOgrenciAdi = formatOgrenciAdi(yeniOgrenciAdi);
             const formatliProjeAdi = formatProjeAdi(yeniProjeAdi);
 
-            if (!formatliProjeAdi || !formatliOgrenciAdi) return Swal.fire('Hata', 'Boş bırakılamaz.', 'error');
-            try { await updateDoc(doc(db, "projeler", id), { proje_adi: formatliProjeAdi, grup_adi: yeniGrupAdi, ogrenci_adi: formatliOgrenciAdi }); Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false }); projeleriGetir(); } catch (error) { Swal.fire('Hata', '', 'error'); }
+            if (!formatliProjeAdi || !formatliOgrenciAdi) return Swal.fire('Hata', 'Proje adı ve Öğrenci isimleri boş bırakılamaz.', 'error');
+            try { 
+                await updateDoc(doc(db, "projeler", id), { 
+                    proje_adi: formatliProjeAdi, 
+                    grup_adi: yeniGrupAdi, 
+                    sunum_gunu: yeniSunumGunu,
+                    ogrenci_adi: formatliOgrenciAdi 
+                }); 
+                Swal.fire({ icon: 'success', title: 'Güncellendi', timer: 1500, showConfirmButton: false }); 
+                projeleriGetir(); 
+            } catch (error) { Swal.fire('Hata', '', 'error'); }
         }
     }
 
+    // MASA İSİMLİĞİ YAZDIR (Tekil Print)
     window.masaIsimligiYazdir = function(projeAdi, grupAdi, ogrenciAdi, id) {
+        document.body.classList.add('mode-masa'); // İlgili print CSS modunu aktif et
         const printArea = document.getElementById('printArea'); const oylamaLinki = getOylamaUrl(id);
         printArea.innerHTML = `<div class="print-half print-top-half"><div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div><div class="print-qr-container" id="qr-top"></div></div><div class="print-half print-bottom-half"><div class="print-text-container"><div class="print-proje-adi">${projeAdi}</div><div class="print-grup-adi">${grupAdi}</div><div class="print-ogrenci-adi">${ogrenciAdi}</div></div><div class="print-qr-container" id="qr-bottom"></div></div>`;
         new QRCode(document.getElementById("qr-top"), { text: oylamaLinki, width: 256, height: 256, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H });
@@ -572,11 +601,84 @@
         setTimeout(() => { window.print(); }, 300);
     }
 
+    // YENİ: TOPLU KAREKOD LİSTESİ (KATALOG) YAZDIRMA FONKSİYONU
+    document.getElementById('printAllQRsBtn').addEventListener('click', async () => {
+        Swal.fire({ title: 'Katalog Hazırlanıyor...', text: 'Lütfen bekleyin', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+        
+        try {
+            const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "asc"));
+            const querySnapshot = await getDocs(q);
+            
+            if (querySnapshot.empty) return Swal.fire('Hata', 'Yazdırılacak proje bulunamadı.', 'warning');
+
+            // Projeleri Sunum Gününe göre gruplandır
+            let grouped = {};
+            let qrDataQueue = [];
+
+            querySnapshot.forEach(docSnap => {
+                let data = docSnap.data();
+                let day = data.sunum_gunu || "Gün Belirtilmeyen Projeler";
+                if(!grouped[day]) grouped[day] = [];
+                grouped[day].push({ id: docSnap.id, ...data });
+            });
+
+            let htmlStr = `<div style="text-align:center; margin-bottom: 30px;">
+                <h1 style="margin-bottom:5px; font-size:32px;">19 MAYIS BİLİM VE GENÇLİK ŞENLİĞİ</h1>
+                <p style="font-size:18px; color:#555; margin:0;">Tüm Projeler ve Oylama Karekodları Katalogu</p>
+            </div>`;
+
+            // Her gün için ayrı bir grup başlığı oluştur ve içine projeleri diz
+            for (let day in grouped) {
+                htmlStr += `
+                <div class="print-day-section">
+                    <div class="print-day-title">${day}</div>
+                    <div class="print-grid">
+                `;
+                
+                grouped[day].forEach(p => {
+                    const safeProje = formatProjeAdi(p.proje_adi);
+                    const safeGrup = p.grup_adi ? `Grup: ${p.grup_adi}` : '';
+                    const link = getOylamaUrl(p.id);
+                    
+                    htmlStr += `
+                        <div class="print-list-item">
+                            <h4>${safeProje}</h4>
+                            <p style="font-weight:bold; color:#000;">${p.ogrenci_adi}</p>
+                            <p>${safeGrup}</p>
+                            <div class="print-list-qr" id="qr-bulk-${p.id}"></div>
+                        </div>
+                    `;
+                    qrDataQueue.push({ id: p.id, link: link });
+                });
+
+                htmlStr += `</div></div>`; // Grid ve Section kapanışları
+            }
+
+            document.body.classList.add('mode-liste'); // Toplu liste print CSS modunu aktif et
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = htmlStr;
+
+            // Oluşturulan divlere Karekodları bas (Optimize boyutlarda)
+            qrDataQueue.forEach(item => {
+                new QRCode(document.getElementById(`qr-bulk-${item.id}`), {
+                    text: item.link, width: 100, height: 100,
+                    colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.M
+                });
+            });
+
+            Swal.close();
+            // Tarayıcının QR'ları Canvas'a çizmesini beklemek için ufak bir gecikme verip Print diyalogunu açıyoruz
+            setTimeout(() => { window.print(); }, 800);
+
+        } catch(e) {
+            console.error(e);
+            Swal.fire('Hata', 'Yazdırma listesi oluşturulurken hata oluştu.', 'error');
+        }
+    });
+
     async function projeleriGetir() {
         const projeListesi = document.getElementById('projeListesi'); projeListesi.innerHTML = "<p><em>Veriler çekiliyor...</em></p>";
-        
         toggleBulkActionsBtn(); 
-        
         try {
             const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc")); const querySnapshot = await getDocs(q);
             let htmlStr = ""; let qrData = []; 
@@ -585,13 +687,21 @@
                 const data = docSnap.data(); const id = docSnap.id;
                 const toplamOy = data.toplam_oy_sayisi || 0; const toplamPuan = data.toplam_ham_puan || 0;
                 const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
-                const safeProje = (data.proje_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); const safeGrup = (data.grup_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); const safeOgrenci = (data.ogrenci_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                
+                const safeProje = (data.proje_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); 
+                const safeGrup = (data.grup_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); 
+                const safeSunum = (data.sunum_gunu || "").replace(/'/g, "\\'").replace(/"/g, "&quot;"); 
+                const safeOgrenci = (data.ogrenci_adi || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                
+                const dayBadge = data.sunum_gunu ? `<div class="day-title">📅 ${data.sunum_gunu}</div>` : "";
+
                 qrData.push({ id: id, link: getOylamaUrl(id) });
                 
                 htmlStr += `
                     <div class="project-card">
                         <input type="checkbox" class="project-checkbox no-print" value="${id}">
                         <div>
+                            ${dayBadge}
                             <h3>${data.proje_adi}</h3>
                             <div class="grup-title">${data.grup_adi || "-"}</div>
                             <p>${data.ogrenci_adi}</p>
@@ -602,7 +712,7 @@
                             <div id="qr-${id}" class="qr-container"></div>
                         </div>
                         <div class="card-actions no-print">
-                            <button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeOgrenci}')">Düzenle</button>
+                            <button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeSunum}', '${safeOgrenci}')">Düzenle</button>
                             <button class="btn-primary" onclick="masaIsimligiYazdir('${safeProje}', '${safeGrup}', '${safeOgrenci}', '${id}')">Masa İsimliği Yazdır</button>
                             <button class="btn-danger" onclick="projeSil('${id}')">Sil</button>
                         </div>
@@ -616,6 +726,7 @@
     document.getElementById('ekleBtn').addEventListener('click', async () => {
         let pAdi = document.getElementById('projeAdi').value.trim(); 
         const gAdi = document.getElementById('grupAdi').value.trim(); 
+        const sGunu = document.getElementById('sunumGunu').value.trim(); 
         let oAdi = document.getElementById('ogrenciAdi').value.trim();
         
         const formatliOgrenciAdi = formatOgrenciAdi(oAdi);
@@ -624,8 +735,8 @@
         if (!formatliProjeAdi || !formatliOgrenciAdi) return Swal.fire('Eksik Bilgi', 'Proje adı ve öğrenci isimleri zorunludur.', 'info');
         document.getElementById('ekleBtn').disabled = true; document.getElementById('ekleBtn').innerText = "Ekleniyor...";
         try {
-            await addDoc(collection(db, "projeler"), { proje_adi: formatliProjeAdi, grup_adi: gAdi, ogrenci_adi: formatliOgrenciAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() });
-            document.getElementById('projeAdi').value = ""; document.getElementById('grupAdi').value = ""; document.getElementById('ogrenciAdi').value = "";
+            await addDoc(collection(db, "projeler"), { proje_adi: formatliProjeAdi, grup_adi: gAdi, sunum_gunu: sGunu, ogrenci_adi: formatliOgrenciAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() });
+            document.getElementById('projeAdi').value = ""; document.getElementById('grupAdi').value = ""; document.getElementById('sunumGunu').value = ""; document.getElementById('ogrenciAdi').value = "";
             Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje eklendi.', timer: 2000, showConfirmButton: false }); projeleriGetir();
         } catch (e) { Swal.fire('Hata', 'Sorun oluştu.', 'error'); } finally { document.getElementById('ekleBtn').disabled = false; document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret"; }
     });
