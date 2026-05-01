@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gazi MTAL - Bilim Şenliği Yönetici Paneli</title>
     
-    <!-- Dış Kütüphaneler: SweetAlert2 (Uyarılar) ve QRCode.js (Karekod) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -25,6 +24,8 @@
         .btn-danger:hover { background-color: #c82333; }
         .btn-warning { background-color: #ffc107; color: #212529; }
         .btn-warning:hover { background-color: #e0a800; }
+        .btn-info { background-color: #17a2b8; color: white; }
+        .btn-info:hover { background-color: #138496; }
         
         #adminPanel, #loginSection { margin-top: 20px; }
         
@@ -126,13 +127,11 @@
 </head>
 <body>
 
-<!-- MASA İSİMLİĞİ YAZDIRMA ŞABLONU (Arka planda çalışır) -->
 <div id="printArea"></div>
 
 <div class="container">
     <h1 class="no-print">🔬 Gazi MTAL - Bilim Şenliği Yönetici Paneli</h1>
     
-    <!-- Giriş Ekranı -->
     <div id="loginSection" class="no-print">
         <h2>Yönetici Girişi</h2>
         <input type="email" id="loginEmail" placeholder="E-posta Adresi">
@@ -140,7 +139,6 @@
         <button id="loginBtn" class="btn-primary">Giriş Yap</button>
     </div>
 
-    <!-- Yönetici Paneli -->
     <div id="adminPanel" style="display: none;">
         <div class="no-print">
             <p style="text-align: center; color: #666;">Şenlik projelerini buradan ekleyebilir, düzenleyebilir ve barkod çıktılarını alabilirsiniz.</p>
@@ -157,7 +155,10 @@
             
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>Mevcut Stantlar ve Durumlar</h2>
-                <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 20px;">Oturumu Kapat</button>
+                <div>
+                    <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 20px; margin-right: 10px;">Excel (CSV) İndir</button>
+                    <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 20px;">Oturumu Kapat</button>
+                </div>
             </div>
             <hr style="margin: 10px 0 30px;">
         </div>
@@ -228,6 +229,43 @@
             title: 'Çıkış Yapılıyor', text: "Oturumu kapatmak istediğinize emin misiniz?", icon: 'question',
             showCancelButton: true, confirmButtonText: 'Evet, Kapat', cancelButtonText: 'İptal'
         }).then((result) => { if (result.isConfirmed) signOut(auth); });
+    });
+
+    // EXCEL (CSV) ÇIKTISI ALMA FONKSİYONU
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+        try {
+            const q = query(collection(db, "projeler"), orderBy("toplam_ham_puan", "desc"));
+            const querySnapshot = await getDocs(q);
+            
+            // UTF-8 BOM ekleyerek Excel'de Türkçe karakterlerin düzgün görünmesini sağlıyoruz
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+            csvContent += "Sıra,Proje Adı,Öğrenci/Grup Adı,Toplam Oy,Toplam Ham Puan,Ortalama\n";
+            
+            let sira = 1;
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const toplamOy = data.toplam_oy_sayisi || 0;
+                const toplamPuan = data.toplam_ham_puan || 0;
+                const ortalama = toplamOy > 0 ? (toplamPuan / toplamOy).toFixed(2) : "0.00";
+                
+                // Virgül veya çift tırnak içeren metinleri güvenli hale getirme
+                const proje = `"${data.proje_adi.replace(/"/g, '""')}"`;
+                const ogrenci = `"${data.ogrenci_adi.replace(/"/g, '""')}"`;
+                
+                csvContent += `${sira},${proje},${ogrenci},${toplamOy},${toplamPuan},${ortalama}\n`;
+                sira++;
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "bilim_senligi_sonuclari.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (e) {
+            Swal.fire('Hata', 'Veriler dışa aktarılırken bir sorun oluştu.', 'error');
+        }
     });
 
     // PROJE SİLME FONKSİYONU
