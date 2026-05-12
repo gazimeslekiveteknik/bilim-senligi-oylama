@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ═══════════════════════════════════════
-           DESIGN TOKENS (Aynı Bırakıldı)
+           STİLLER BİREBİR KORUNDU
         ═══════════════════════════════════════ */
         :root {
             --bg-primary: #0a0e1a; --bg-card: rgba(15, 20, 40, 0.85); --bg-glass: rgba(255, 255, 255, 0.04);
@@ -269,18 +269,21 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const projeId = urlParams.get('id');
+        
         let globalOyLimiti = 2; 
         let selectedRating = 0;
 
-        // JÜRİ MANTIĞI
+        // YENİ: Dinamik Jüri Mantığı
         let isJuriMode = false;
-        const JURI_PASSWORD = "senlik2024";
+        let globalJuriSifresi = "senlik2024"; // Eğer veritabanında şifre yoksa geçerli olacak varsayılan şifre
+        
         const juriLoginBtn = document.getElementById('juriLoginBtn');
         const juriStatus = document.getElementById('juriStatus');
 
+        // YENİ: Şifre kontrolü artık global değişkenden yapılıyor
         juriLoginBtn.addEventListener('click', () => {
             const pass = prompt("Jüri şifresini giriniz:");
-            if (pass === JURI_PASSWORD) {
+            if (pass === globalJuriSifresi) {
                 isJuriMode = true;
                 juriLoginBtn.style.display = 'none';
                 juriStatus.style.display = 'inline-block';
@@ -353,8 +356,16 @@
             void messageOverlay.offsetWidth; messageOverlay.classList.add('visible'); if (type === 'success') { launchConfetti(); }
         }
 
+        // YENİ: Başlangıçta Jüri Şifresini de Firebase'den çekiyor
         async function baslat() {
-            try { const ayarSnap = await getDoc(doc(db, "ayarlar", "genel")); if (ayarSnap.exists() && ayarSnap.data().gunlukOyHakki) { globalOyLimiti = ayarSnap.data().gunlukOyHakki; } } catch (e) {}
+            try { 
+                const ayarSnap = await getDoc(doc(db, "ayarlar", "genel")); 
+                if (ayarSnap.exists()) {
+                    const data = ayarSnap.data();
+                    if (data.gunlukOyHakki) globalOyLimiti = data.gunlukOyHakki; 
+                    if (data.juriSifresi) globalJuriSifresi = data.juriSifresi; 
+                }
+            } catch (e) {}
             await projeyiYukle();
         }
 
@@ -386,7 +397,6 @@
             try {
                 const projeRef = doc(db, "projeler", projeId);
                 
-                // MÜKEMMEL GERİYE DÖNÜK UYUM: Her halükarda Toplam'lar artar. Jüri ise Jüri de artar.
                 const updates = {
                     toplam_ham_puan: increment(selectedRating),
                     toplam_oy_sayisi: increment(1)
