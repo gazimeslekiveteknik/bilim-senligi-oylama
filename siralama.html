@@ -6,22 +6,16 @@
     <title>19 Mayıs Bilim ve Gençlik Şenliği - Canlı Puan Durumu</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0; padding: 0; font-family: 'Outfit', sans-serif;
-            background-color: #0b0f19; color: #f1f5f9; height: 100vh; overflow: hidden;
-            display: flex; flex-direction: column;
-            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b0f19 70%);
-        }
+        body { margin: 0; padding: 0; font-family: 'Outfit', sans-serif; background-color: #0b0f19; color: #f1f5f9; height: 100vh; overflow: hidden; display: flex; flex-direction: column; background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b0f19 70%); }
         .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.5; background: url('https://www.transparenttextures.com/patterns/stardust.png'); animation: moveStars 100s linear infinite; }
         @keyframes moveStars { from { background-position: 0 0; } to { background-position: 1000px 1000px; } }
-
         .header { text-align: center; padding: 30px 0 10px; text-transform: uppercase; animation: glow 2s ease-in-out infinite alternate; }
         .header h1 { margin: 0; font-size: 46px; font-weight: 900; background: linear-gradient(to right, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .header h2 { margin: 5px 0 0; font-size: 24px; color: #94a3b8; font-weight: 600; letter-spacing: 5px; }
+        .info-text { font-size: 13px; color: #06b6d4; margin-top: 8px; font-weight: 600; letter-spacing: 1px; }
         @keyframes glow { from { text-shadow: 0 0 10px rgba(79, 172, 254, 0.5); } to { text-shadow: 0 0 20px rgba(79, 172, 254, 0.8), 0 0 30px rgba(0, 242, 254, 0.6); } }
 
         .main-container { display: flex; flex: 1; padding: 20px 50px; gap: 40px; align-items: flex-end; }
-        
         .podium-section { flex: 1.2; display: flex; justify-content: center; align-items: flex-end; gap: 15px; height: 100%; padding-bottom: 40px; }
         .podium-box { display: flex; flex-direction: column; align-items: center; width: 30%; transition: all 0.5s ease; }
         .podium-rank { font-size: 80px; font-weight: 900; line-height: 1; margin-bottom: -15px; z-index: 2; text-shadow: 0 5px 15px rgba(0,0,0,0.5); }
@@ -31,37 +25,19 @@
         .podium-card .score { font-size: 34px; font-weight: 900; }
         .podium-card .votes { font-size: 14px; color: #64748b; margin-top: 5px; }
 
-        .rank-1 { order: 2; height: 100%; z-index: 3; }
-        .rank-1 .podium-card { height: 350px; border-color: #FFD700; background: linear-gradient(to top, rgba(20,25,45,0.9), rgba(255,215,0,0.1)); box-shadow: 0 0 40px rgba(255, 215, 0, 0.3); }
-        .rank-1 .podium-rank { color: #FFD700; font-size: 100px; }
-        .rank-1 .score { color: #FFD700; }
-
-        .rank-2 { order: 1; height: 80%; }
-        .rank-2 .podium-card { height: 280px; border-color: #C0C0C0; background: linear-gradient(to top, rgba(20,25,45,0.9), rgba(192,192,192,0.1)); }
-        .rank-2 .podium-rank { color: #C0C0C0; }
-        .rank-2 .score { color: #C0C0C0; }
-
-        .rank-3 { order: 3; height: 65%; }
-        .rank-3 .podium-card { height: 220px; border-color: #CD7F32; background: linear-gradient(to top, rgba(20,25,45,0.9), rgba(205,127,50,0.1)); }
-        .rank-3 .podium-rank { color: #CD7F32; }
-        .rank-3 .score { color: #CD7F32; }
+        .rank-1 { order: 2; height: 100%; z-index: 3; } .rank-1 .podium-card { height: 350px; border-color: #FFD700; background: linear-gradient(to top, rgba(20,25,45,0.9), rgba(255,215,0,0.1)); box-shadow: 0 0 40px rgba(255, 215, 0, 0.3); } .rank-1 .podium-rank { color: #FFD700; font-size: 100px; } .rank-1 .score { color: #FFD700; }
+        .rank-2 { order: 1; height: 80%; } .rank-2 .podium-card { height: 280px; border-color: #C0C0C0; background: linear-gradient(to top, rgba(20,25,45,0.9), rgba(192,192,192,0.1)); } .rank-2 .podium-rank { color: #C0C0C0; } .rank-2 .score { color: #C0C0C0; }
+        .rank-3 { order: 3; height: 65%; } .rank-3 .podium-card { height: 220px; border-color: #CD7F32; background: linear-gradient(to top, rgba(20,25,45,0.9), rgba(205,127,50,0.1)); } .rank-3 .podium-rank { color: #CD7F32; } .rank-3 .score { color: #CD7F32; }
 
         .list-section { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: center; }
         .list-container { background: rgba(20, 25, 45, 0.7); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); padding: 20px; height: 85%; overflow: hidden; }
-        
         .list-header { font-size: 24px; font-weight: 800; margin-bottom: 20px; color: #06b6d4; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; display: flex; justify-content: space-between; }
-        
         .list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; border-left: 4px solid #06b6d4; animation: slideIn 0.5s ease-out forwards; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-
         .list-item .rank-circle { width: 35px; height: 35px; background: rgba(6,182,212,0.2); color: #06b6d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; margin-right: 15px; }
-        .list-item .item-info { flex: 1; }
-        .list-item .item-info h4 { margin: 0; font-size: 18px; color: white; }
-        .list-item .item-info p { margin: 2px 0 0; font-size: 13px; color: #94a3b8; }
-        .list-item .item-score { font-size: 22px; font-weight: 800; color: white; display: flex; flex-direction: column; align-items: flex-end; }
-        .list-item .item-score span { font-size: 11px; color: #64748b; font-weight: 400; }
-        .flash { animation: highlight 1s ease-out; }
-        @keyframes highlight { 0% { background-color: rgba(6,182,212,0.5); } 100% { background-color: transparent; } }
+        .list-item .item-info { flex: 1; } .list-item .item-info h4 { margin: 0; font-size: 18px; color: white; } .list-item .item-info p { margin: 2px 0 0; font-size: 13px; color: #94a3b8; }
+        .list-item .item-score { font-size: 22px; font-weight: 800; color: white; display: flex; flex-direction: column; align-items: flex-end; } .list-item .item-score span { font-size: 11px; color: #64748b; font-weight: 400; }
+        .flash { animation: highlight 1s ease-out; } @keyframes highlight { 0% { background-color: rgba(6,182,212,0.5); } 100% { background-color: transparent; } }
     </style>
 </head>
 <body>
@@ -69,6 +45,7 @@
     <div class="header">
         <h1>19 MAYIS BİLİM VE GENÇLİK ŞENLİĞİ</h1>
         <h2 id="liveIndicator">🔴 CANLI PUAN DURUMU</h2>
+        <div class="info-text">⭐ FİNAL SKORU = %70 HALK OYU + %30 JÜRİ OYU</div>
     </div>
 
     <div class="main-container">
@@ -79,7 +56,7 @@
             <div class="list-container">
                 <div class="list-header">
                     <span>Proje Sıralaması</span>
-                    <span style="font-size: 16px; color: #94a3b8; font-weight: 400;">Puan (Oy)</span>
+                    <span style="font-size: 16px; color: #94a3b8; font-weight: 400;">Puan (Etkileşim)</span>
                 </div>
                 <div id="listArea"></div>
             </div>
@@ -91,108 +68,68 @@
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k",
-            authDomain: "bilim-senligi-oylama.firebaseapp.com",
-            projectId: "bilim-senligi-oylama",
-            storageBucket: "bilim-senligi-oylama.firebasestorage.app",
-            messagingSenderId: "759289316087",
-            appId: "1:759289316087:web:885560206050005e6d49f2"
+            apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k", authDomain: "bilim-senligi-oylama.firebaseapp.com", projectId: "bilim-senligi-oylama",
+            storageBucket: "bilim-senligi-oylama.firebasestorage.app", messagingSenderId: "759289316087", appId: "1:759289316087:web:885560206050005e6d49f2"
         };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig); const db = getFirestore(app);
 
         onSnapshot(collection(db, "projeler"), (snapshot) => {
-            let projeler = [];
-            let toplamSistemOyu = 0;
-            let toplamSistemPuani = 0;
+            let projeler = []; let halkToplamSistemOyu = 0; let halkToplamSistemPuani = 0;
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                toplamSistemOyu += (data.toplam_oy_sayisi || 0);
-                toplamSistemPuani += (data.toplam_ham_puan || 0);
+                const jOy = data.juri_oy_sayisi || 0; const jPuan = data.juri_ham_puan || 0;
+                const tOy = data.toplam_oy_sayisi || 0; const tPuan = data.toplam_ham_puan || 0;
+                // Matematiksel Geriye Dönük Uyum Hilesi
+                const hOy = Math.max(0, tOy - jOy); const hPuan = Math.max(0, tPuan - jPuan);
+
+                halkToplamSistemOyu += hOy; halkToplamSistemPuani += hPuan;
             });
 
-            const C = toplamSistemOyu > 0 ? (toplamSistemPuani / toplamSistemOyu) : 0;
-            const m = 10; 
+            const C = halkToplamSistemOyu > 0 ? (halkToplamSistemPuani / halkToplamSistemOyu) : 0; const m = 10; 
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                const oySayisi = data.toplam_oy_sayisi || 0;
-                const hamPuan = data.toplam_ham_puan || 0;
-                
-                const klasikOrtalama = oySayisi > 0 ? (hamPuan / oySayisi) : 0;
+                const jOy = data.juri_oy_sayisi || 0; const jPuan = data.juri_ham_puan || 0;
+                const tOy = data.toplam_oy_sayisi || 0; const tPuan = data.toplam_ham_puan || 0;
+                const hOy = Math.max(0, tOy - jOy); const hPuan = Math.max(0, tPuan - jPuan);
 
-                let siralamaSkoru = 0;
-                if (oySayisi > 0) {
-                    siralamaSkoru = ((oySayisi / (oySayisi + m)) * klasikOrtalama) + ((m / (oySayisi + m)) * C);
-                }
+                // Halk Skoru (Bayes)
+                const halkKlasikOrtalama = hOy > 0 ? (hPuan / hOy) : 0;
+                let halkBayesSkoru = 0; if (hOy > 0) { halkBayesSkoru = ((hOy / (hOy + m)) * halkKlasikOrtalama) + ((m / (hOy + m)) * C); }
 
-                projeler.push({
-                    id: doc.id,
-                    proje_adi: data.proje_adi,
-                    ogrenci_adi: data.ogrenci_adi,
-                    skor: siralamaSkoru, // Ekranda da, sıralamada da kullanılacak tek ve net puan
-                    oy_sayisi: oySayisi
-                });
+                // Jüri Skoru
+                const juriSkoru = jOy > 0 ? (jPuan / jOy) : 0;
+
+                let finalSkor = 0;
+                if (hOy > 0 && jOy > 0) { finalSkor = (halkBayesSkoru * 0.70) + (juriSkoru * 0.30); } 
+                else if (hOy > 0 && jOy === 0) { finalSkor = halkBayesSkoru; } 
+                else if (hOy === 0 && jOy > 0) { finalSkor = juriSkoru; }
+
+                projeler.push({ id: doc.id, proje_adi: data.proje_adi, ogrenci_adi: data.ogrenci_adi, skor: finalSkor, oy_sayisi: tOy });
             });
 
-            projeler.sort((a, b) => {
-                if (b.skor !== a.skor) return b.skor - a.skor;
-                return b.oy_sayisi - a.oy_sayisi; 
-            });
-
+            projeler.sort((a, b) => { if (b.skor !== a.skor) return b.skor - a.skor; return b.oy_sayisi - a.oy_sayisi; });
             ekraniGuncelle(projeler);
         });
 
         function ekraniGuncelle(projeler) {
-            const podiumArea = document.getElementById('podiumArea');
-            const listArea = document.getElementById('listArea');
+            const podiumArea = document.getElementById('podiumArea'); const listArea = document.getElementById('listArea');
             if (projeler.length === 0) return;
-
-            let podiumHTML = '';
-            const podyumDizilimi = [
-                { rank: 2, class: 'rank-2', data: projeler[1] },
-                { rank: 1, class: 'rank-1', data: projeler[0] },
-                { rank: 3, class: 'rank-3', data: projeler[2] }
-            ];
-
+            let podiumHTML = ''; const podyumDizilimi = [ { rank: 2, class: 'rank-2', data: projeler[1] }, { rank: 1, class: 'rank-1', data: projeler[0] }, { rank: 3, class: 'rank-3', data: projeler[2] } ];
             podyumDizilimi.forEach(item => {
                 if (item.data) {
                     const nameSize = item.data.proje_adi.length > 20 ? '16px' : '22px';
-                    // Yıldızın yanında doğrudan adaletli algoritma skoru (Bayes) gösterilir
-                    podiumHTML += `
-                    <div class="podium-box ${item.class}">
-                        <div class="podium-rank">${item.rank}</div>
-                        <div class="podium-card flash">
-                            <div class="p-name" style="font-size: ${nameSize}">${item.data.proje_adi}</div>
-                            <div class="g-name">${item.data.ogrenci_adi}</div>
-                            <div class="score">⭐ ${item.data.skor.toFixed(2)}</div>
-                            <div class="votes">${item.data.oy_sayisi} Oy Kullanıldı</div>
-                        </div>
-                    </div>`;
+                    podiumHTML += `<div class="podium-box ${item.class}"><div class="podium-rank">${item.rank}</div><div class="podium-card flash"><div class="p-name" style="font-size: ${nameSize}">${item.data.proje_adi}</div><div class="g-name">${item.data.ogrenci_adi}</div><div class="score">⭐ ${item.data.skor.toFixed(2)}</div><div class="votes">${item.data.oy_sayisi} Etkileşim</div></div></div>`;
                 }
             });
             podiumArea.innerHTML = podiumHTML;
-
-            let listHTML = '';
-            const kalanProjeler = projeler.slice(3, 10); 
+            let listHTML = ''; const kalanProjeler = projeler.slice(3, 10); 
             kalanProjeler.forEach((p, index) => {
-                // Listede de doğrudan adaletli algoritma skoru (Bayes) gösterilir
-                listHTML += `
-                <div class="list-item flash">
-                    <div class="rank-circle">${index + 4}</div>
-                    <div class="item-info">
-                        <h4>${p.proje_adi}</h4><p>${p.ogrenci_adi}</p>
-                    </div>
-                    <div class="item-score">${p.skor.toFixed(2)}<span>${p.oy_sayisi} oy</span></div>
-                </div>`;
+                listHTML += `<div class="list-item flash"><div class="rank-circle">${index + 4}</div><div class="item-info"><h4>${p.proje_adi}</h4><p>${p.ogrenci_adi}</p></div><div class="item-score">${p.skor.toFixed(2)}<span>${p.oy_sayisi} oy</span></div></div>`;
             });
-            
             listArea.innerHTML = listHTML || `<p style="text-align:center; color:#64748b; margin-top:30px;">Diğer projeler yükleniyor...</p>`;
-            
-            const indicator = document.getElementById('liveIndicator');
-            indicator.style.opacity = '0'; setTimeout(() => indicator.style.opacity = '1', 300);
+            const indicator = document.getElementById('liveIndicator'); indicator.style.opacity = '0'; setTimeout(() => indicator.style.opacity = '1', 300);
         }
     </script>
 </body>
