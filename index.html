@@ -336,4 +336,24 @@
                 const dayBadge = data.sunum_gunu ? `<div class="day-title">📅 ${data.sunum_gunu}</div>` : "";
                 qrData.push({ id: id, link: getOylamaUrl(id) });
                 
-                htmlStr += `<div class="project-card"><input type="checkbox" class="project-checkbox no-print" value="${id}"><div>${dayBadge}<h3>${data.proje_adi}</h3><div class="grup-title">${data.grup_adi || "-"}</div><p>${data.ogrenci_adi}</p><div class="stats-box no-print"><div class="stat-item"
+                htmlStr += `<div class="project-card"><input type="checkbox" class="project-checkbox no-print" value="${id}"><div>${dayBadge}<h3>${data.proje_adi}</h3><div class="grup-title">${data.grup_adi || "-"}</div><p>${data.ogrenci_adi}</p><div class="stats-box no-print"><div class="stat-item" title="Halk Oyu: ${halkOy} | Jüri Oyu: ${juriOy}"><span>Toplam Oy</span><strong>${toplamOy}</strong></div><div class="stat-item" style="border-left: 2px solid #ddd; padding-left: 15px;"><span>Genel Ort.</span><strong>⭐ ${genelOrtalama}</strong></div></div><div id="qr-${id}" class="qr-container"></div></div><div class="card-actions no-print"><button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeSunum}', '${safeOgrenci}')">Düzenle</button><button class="btn-primary" onclick="masaIsimligiYazdir('${safeProje}', '${safeGrup}', '${safeOgrenci}', '${id}')">Masa İsimliği Yazdır</button><button class="btn-danger" onclick="projeSil('${id}')">Sil</button></div></div>`;
+            });
+            projeListesi.innerHTML = htmlStr;
+            
+            // Eğer arama kutusunda yazı varsa listeyi tekrar filtrele
+            document.getElementById('searchInput').dispatchEvent(new Event('input'));
+
+            qrData.forEach(item => { new QRCode(document.getElementById(`qr-${item.id}`), { text: item.link, width: 140, height: 140, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H }); });
+        } catch (e) { projeListesi.innerHTML = "<p style='color:red;'>Hata oluştu.</p>"; }
+    }
+
+    document.getElementById('ekleBtn').addEventListener('click', async () => {
+        let pAdi = document.getElementById('projeAdi').value.trim(); const gAdi = document.getElementById('grupAdi').value.trim(); const sGunu = document.getElementById('sunumGunu').value.trim(); let oAdi = document.getElementById('ogrenciAdi').value.trim();
+        const formatliOgrenciAdi = formatOgrenciAdi(oAdi); const formatliProjeAdi = formatProjeAdi(pAdi); 
+        if (!formatliProjeAdi || !formatliOgrenciAdi) return Swal.fire('Eksik Bilgi', 'Proje adı ve öğrenci isimleri zorunludur.', 'info');
+        document.getElementById('ekleBtn').disabled = true; document.getElementById('ekleBtn').innerText = "Ekleniyor...";
+        try { await addDoc(collection(db, "projeler"), { proje_adi: formatliProjeAdi, grup_adi: gAdi, sunum_gunu: sGunu, ogrenci_adi: formatliOgrenciAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() }); document.getElementById('projeAdi').value = ""; document.getElementById('grupAdi').value = ""; document.getElementById('sunumGunu').value = ""; document.getElementById('ogrenciAdi').value = ""; Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje eklendi.', timer: 2000, showConfirmButton: false }); projeleriGetir(); } catch (e) { Swal.fire('Hata', 'Sorun oluştu.', 'error'); } finally { document.getElementById('ekleBtn').disabled = false; document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret"; }
+    });
+</script>
+</body>
+</html>
