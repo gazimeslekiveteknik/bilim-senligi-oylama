@@ -273,21 +273,23 @@
         let globalOyLimiti = 2; 
         let selectedRating = 0;
 
-        // YENİ: Dinamik Jüri Mantığı
         let isJuriMode = false;
-        let globalJuriSifresi = "senlik2024"; // Eğer veritabanında şifre yoksa geçerli olacak varsayılan şifre
+        let globalJuriSifresi = "senlik2024"; 
         
         const juriLoginBtn = document.getElementById('juriLoginBtn');
         const juriStatus = document.getElementById('juriStatus');
 
-        // YENİ: Şifre kontrolü artık global değişkenden yapılıyor
         juriLoginBtn.addEventListener('click', () => {
             const pass = prompt("Jüri şifresini giriniz:");
             if (pass === globalJuriSifresi) {
                 isJuriMode = true;
                 juriLoginBtn.style.display = 'none';
                 juriStatus.style.display = 'inline-block';
-                alert("Jüri modu aktif! Oylarınız %30 etkiye sahip jüri puanı olarak kaydedilecek.");
+                // Jüri modunda günlük limit barı kafa karıştırmasın diye gizliyoruz
+                document.getElementById('votesSection').style.display = 'none'; 
+                alert("Jüri modu aktif! Her projeye yalnızca BİR KEZ jüri oyu verebilirsiniz.");
+                // Mod değiştiğinde bloklu olan ekranın kilidini açmak için projeyi baştan yükle
+                projeyiYukle();
             } else if (pass) {
                 alert("Hatalı şifre!");
             }
@@ -305,6 +307,7 @@
         const ratingLabels = { 1: '⭐ Fena Değil', 2: '⭐⭐ İyi', 3: '⭐⭐⭐ Güzel', 4: '⭐⭐⭐⭐ Harika', 5: '⭐⭐⭐⭐⭐ Muhteşem!' };
 
         function createStars() {
+            starsContainer.innerHTML = ''; // Ekran yenilendiğinde yıldızların üst üste binmesini engeller
             for (let i = 1; i <= 5; i++) {
                 const starEl = document.createElement('div'); starEl.className = 'star'; starEl.dataset.value = i;
                 starEl.innerHTML = `<div class="star-glow"></div><span class="sparkle"></span><span class="sparkle"></span><span class="sparkle"></span><span class="sparkle"></span><svg viewBox="0 0 51 48" xmlns="http://www.w3.org/2000/svg"><path class="star-fill" d="M25.5 1.5L31.9 17.9L49.5 19.5L36 31.2L39.8 48L25.5 39.3L11.2 48L15 31.2L1.5 19.5L19.1 17.9L25.5 1.5Z"/></svg>`;
@@ -325,15 +328,41 @@
             btnSubmit.disabled = false; btnSubmit.classList.add('ready'); btnSubmit.textContent = `${value} Puan ile Oyla`;
         }
 
+        // --- YENİ BAĞIMSIZ HAFIZA SİSTEMİ ---
         function getDurum() {
             const bugun = new Date().toLocaleDateString('tr-TR');
-            let durumLocal = JSON.parse(localStorage.getItem('senlikOylama')) || {}; let durumSession = JSON.parse(sessionStorage.getItem('senlikOylama')) || {};
-            let cookieMatch = document.cookie.match(new RegExp('(^| )senlikOylama=([^;]+)')); let durumCookie = cookieMatch ? JSON.parse(decodeURIComponent(cookieMatch[2])) : {};
-            let tumGecmisOylar = new Set([ ...(durumLocal.tumOylananlar || []), ...(durumSession.tumOylananlar || []), ...(durumCookie.tumOylananlar || []), ...(durumLocal.oylananlar || []), ...(durumCookie.oylananlar || []) ]);
+            let durumLocal = JSON.parse(localStorage.getItem('senlikOylama')) || {}; 
+            let durumSession = JSON.parse(sessionStorage.getItem('senlikOylama')) || {};
+            let cookieMatch = document.cookie.match(new RegExp('(^| )senlikOylama=([^;]+)')); 
+            let durumCookie = cookieMatch ? JSON.parse(decodeURIComponent(cookieMatch[2])) : {};
+            
+            // 1. Normal Halk Oyları Hafızası
+            let tumGecmisOylar = new Set([ 
+                ...(durumLocal.tumOylananlar || []), ...(durumSession.tumOylananlar || []), ...(durumCookie.tumOylananlar || []), 
+                ...(durumLocal.oylananlar || []), ...(durumCookie.oylananlar || []) 
+            ]);
+            
+            // 2. Jüri Oyları Hafızası (Tamamen Bağımsız)
+            let tumJuriGecmisOylar = new Set([ 
+                ...(durumLocal.tumJuriOylananlar || []), ...(durumSession.tumJuriOylananlar || []), ...(durumCookie.tumJuriOylananlar || [])
+            ]);
+
+            // Günlük Sayaç (Sadece Halk Modu için)
             let gunlukler = [durumLocal, durumSession, durumCookie].filter(d => d.tarih === bugun);
-            let bugunKullanilan = 0; if (gunlukler.length > 0) { bugunKullanilan = Math.max(...gunlukler.map(d => d.gunlukKullanilan || (d.oylananlar ? d.oylananlar.length : 0))); }
-            let gecerliDurum = { tarih: bugun, gunlukKullanilan: bugunKullanilan, tumOylananlar: Array.from(tumGecmisOylar) };
-            durumGuncelle(gecerliDurum); return gecerliDurum;
+            let bugunKullanilan = 0; 
+            if (gunlukler.length > 0) { 
+                bugunKullanilan = Math.max(...gunlukler.map(d => d.gunlukKullanilan || (d.oylananlar ? d.oylananlar.length : 0))); 
+            }
+            
+            let gecerliDurum = { 
+                tarih: bugun, 
+                gunlukKullanilan: bugunKullanilan, 
+                tumOylananlar: Array.from(tumGecmisOylar),
+                tumJuriOylananlar: Array.from(tumJuriGecmisOylar) // Jüri Hafızası sisteme dahil edildi
+            };
+            
+            durumGuncelle(gecerliDurum); 
+            return gecerliDurum;
         }
 
         function durumGuncelle(yeniDurum) {
@@ -352,11 +381,14 @@
         function showMessage(type, title, text, kullanilanSayisi = null) {
             messageOverlay.className = `message-overlay message-overlay--${type}`; messageBox.className = `message-box message-box--${type}`;
             messageIcon.textContent = type === 'success' ? '🎉' : '⚠️'; messageTitle.textContent = title; messageText.textContent = text;
-            if (kullanilanSayisi !== null) { messageRemaining.style.display = 'inline-block'; messageRemaining.textContent = `Bugün kullanılan oy: ${kullanilanSayisi} / ${globalOyLimiti}`; } else { messageRemaining.style.display = 'none'; }
+            if (kullanilanSayisi !== null && !isJuriMode) { 
+                messageRemaining.style.display = 'inline-block'; messageRemaining.textContent = `Bugün kullanılan oy: ${kullanilanSayisi} / ${globalOyLimiti}`; 
+            } else { 
+                messageRemaining.style.display = 'none'; 
+            }
             void messageOverlay.offsetWidth; messageOverlay.classList.add('visible'); if (type === 'success') { launchConfetti(); }
         }
 
-        // YENİ: Başlangıçta Jüri Şifresini de Firebase'den çekiyor
         async function baslat() {
             try { 
                 const ayarSnap = await getDoc(doc(db, "ayarlar", "genel")); 
@@ -371,10 +403,27 @@
 
         async function projeyiYukle() {
             if (!projeId) { return showMessage('error', 'Geçersiz QR Kod', 'Lütfen standdaki QR kodu tekrar okutun.'); }
-            const durum = getDurum(); updateProgressUI(durum);
-            if (durum.tumOylananlar.includes(projeId) && !isJuriMode) { return showMessage('error', 'Zaten Oyladınız', 'Bu projeye geçmişte veya bugün zaten oy verdiniz. Farklı projeleri keşfedin!', durum.gunlukKullanilan); }
-            if (durum.gunlukKullanilan >= globalOyLimiti && !isJuriMode) { return showMessage('error', 'Oy Hakkınız Bitti', `Bugünkü tüm oy haklarınızı (${globalOyLimiti}/${globalOyLimiti}) kullandınız. Yarın tekrar bekleriz!`); }
+            const durum = getDurum(); 
+            
+            if (!isJuriMode) updateProgressUI(durum);
 
+            // --- YENİ ONAY MEKANİZMASI ---
+            if (isJuriMode) {
+                // JÜRİ KONTROLÜ: Jüri olarak bu projeye daha önce oy verdi mi?
+                if (durum.tumJuriOylananlar.includes(projeId)) { 
+                    return showMessage('error', 'Jüri Oyu Kullanıldı', 'Jüri olarak bu projeye zaten puan verdiniz. Her projeye yalnızca bir kez jüri oyu verebilirsiniz.'); 
+                }
+            } else {
+                // HALK KONTROLÜ: Normal modda oy verdi mi veya hakkı doldu mu?
+                if (durum.tumOylananlar.includes(projeId)) { 
+                    return showMessage('error', 'Zaten Oyladınız', 'Bu projeye geçmişte veya bugün zaten oy verdiniz. Farklı projeleri keşfedin!', durum.gunlukKullanilan); 
+                }
+                if (durum.gunlukKullanilan >= globalOyLimiti) { 
+                    return showMessage('error', 'Oy Hakkınız Bitti', `Bugünkü tüm oy haklarınızı (${globalOyLimiti}/${globalOyLimiti}) kullandınız. Yarın tekrar bekleriz!`); 
+                }
+            }
+
+            // Kilite takılmadıysa projeyi ekrana bas
             try {
                 const projeRef = doc(db, "projeler", projeId); const projeSnap = await getDoc(projeRef);
                 if (projeSnap.exists()) {
@@ -389,7 +438,13 @@
         btnSubmit.addEventListener('click', async (e) => {
             if (selectedRating === 0) return;
             const durum = getDurum();
-            if ((durum.gunlukKullanilan >= globalOyLimiti || durum.tumOylananlar.includes(projeId)) && !isJuriMode) return;
+            
+            // Son Güvenlik Kontrolü
+            if (isJuriMode) {
+                if (durum.tumJuriOylananlar.includes(projeId)) return;
+            } else {
+                if (durum.gunlukKullanilan >= globalOyLimiti || durum.tumOylananlar.includes(projeId)) return;
+            }
 
             const rect = btnSubmit.getBoundingClientRect(); const ripple = document.createElement('span'); ripple.className = 'ripple'; ripple.style.left = (e.clientX - rect.left) + 'px'; ripple.style.top = (e.clientY - rect.top) + 'px'; ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px'; btnSubmit.appendChild(ripple); setTimeout(() => ripple.remove(), 600);
             btnSubmit.disabled = true; projectCard.style.display = 'none'; ratingSection.style.display = 'none'; loaderContainer.classList.add('visible');
@@ -409,12 +464,23 @@
 
                 await updateDoc(projeRef, updates);
 
-                if(!isJuriMode) {
-                    durum.tumOylananlar.push(projeId); durum.gunlukKullanilan += 1; durumGuncelle(durum);
+                // Oyun veritabanına işlenmesinin ardından cihaz hafızasını güncelle
+                if (isJuriMode) {
+                    durum.tumJuriOylananlar.push(projeId); // Jüri hafızasına ekle
+                } else {
+                    durum.tumOylananlar.push(projeId);     // Halk hafızasına ekle
+                    durum.gunlukKullanilan += 1;
                 }
+                durumGuncelle(durum);
 
-                loaderContainer.classList.remove('visible'); updateProgressUI(durum);
-                showMessage('success', 'Oyunuz Kaydedildi!', `${selectedRating} puan başarıyla verildi. Teşekkür ederiz!`, isJuriMode ? durum.gunlukKullanilan : durum.gunlukKullanilan);
+                loaderContainer.classList.remove('visible'); 
+                if (!isJuriMode) updateProgressUI(durum);
+                
+                const basariMesaji = isJuriMode 
+                    ? `${selectedRating} puanlık JÜRİ OYU başarıyla kaydedildi. Diğer projelere geçebilirsiniz.`
+                    : `${selectedRating} puan başarıyla verildi. Teşekkür ederiz!`;
+
+                showMessage('success', 'Oyunuz Kaydedildi!', basariMesaji, isJuriMode ? null : durum.gunlukKullanilan);
 
             } catch (error) {
                 loaderContainer.classList.remove('visible'); projectCard.style.display = 'block'; ratingSection.style.display = 'block'; btnSubmit.disabled = false;
