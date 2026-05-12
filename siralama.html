@@ -16,7 +16,6 @@
         @keyframes moveStars { from { background-position: 0 0; } to { background-position: 1000px 1000px; } }
 
         .header { text-align: center; padding: 30px 0 10px; text-transform: uppercase; animation: glow 2s ease-in-out infinite alternate; }
-        /* Başlık font boyutunu uzun metne göre hafifçe optimize ettik */
         .header h1 { margin: 0; font-size: 46px; font-weight: 900; background: linear-gradient(to right, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .header h2 { margin: 5px 0 0; font-size: 24px; color: #94a3b8; font-weight: 600; letter-spacing: 5px; }
         @keyframes glow { from { text-shadow: 0 0 10px rgba(79, 172, 254, 0.5); } to { text-shadow: 0 0 20px rgba(79, 172, 254, 0.8), 0 0 30px rgba(0, 242, 254, 0.6); } }
@@ -103,35 +102,27 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Canlı dinleyici (Bayes Ortalaması Entegre Edildi)
         onSnapshot(collection(db, "projeler"), (snapshot) => {
             let projeler = [];
             let toplamSistemOyu = 0;
             let toplamSistemPuani = 0;
 
-            // 1. AŞAMA: Sistem genelinin verilerini topla (Bayes ortalaması için gerekli)
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 toplamSistemOyu += (data.toplam_oy_sayisi || 0);
                 toplamSistemPuani += (data.toplam_ham_puan || 0);
             });
 
-            // Sistemin genel ortalaması (C). Sistemde hiç oy yoksa 0 kabul edilir.
             const C = toplamSistemOyu > 0 ? (toplamSistemPuani / toplamSistemOyu) : 0;
-            
-            // Güvenilirlik barajı (m). Projenin rüştünü ispatlaması beklenen minimum oy sayısı.
             const m = 10; 
 
-            // 2. AŞAMA: Projeleri puanla ve sıralama skorunu hesapla
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 const oySayisi = data.toplam_oy_sayisi || 0;
                 const hamPuan = data.toplam_ham_puan || 0;
                 
-                // Kullanıcıya gösterilecek klasik ortalama
                 const klasikOrtalama = oySayisi > 0 ? (hamPuan / oySayisi) : 0;
 
-                // Bayes Ortalaması (Arka planda gizlice sıralamayı belirleyecek skor)
                 let siralamaSkoru = 0;
                 if (oySayisi > 0) {
                     siralamaSkoru = ((oySayisi / (oySayisi + m)) * klasikOrtalama) + ((m / (oySayisi + m)) * C);
@@ -141,16 +132,14 @@
                     id: doc.id,
                     proje_adi: data.proje_adi,
                     ogrenci_adi: data.ogrenci_adi,
-                    ortalama: klasikOrtalama, // Ekranda görünecek puan
-                    skor: siralamaSkoru,      // Sıralamayı belirleyecek adil puan
+                    skor: siralamaSkoru, // Ekranda da, sıralamada da kullanılacak tek ve net puan
                     oy_sayisi: oySayisi
                 });
             });
 
-            // Gelişmiş Sıralama: Artık klasik ortalama ile değil, hesaplanan "skor" ile diziliyor.
             projeler.sort((a, b) => {
                 if (b.skor !== a.skor) return b.skor - a.skor;
-                return b.oy_sayisi - a.oy_sayisi; // Skorlar tam eşitse çok oy alan kazanır
+                return b.oy_sayisi - a.oy_sayisi; 
             });
 
             ekraniGuncelle(projeler);
@@ -171,13 +160,14 @@
             podyumDizilimi.forEach(item => {
                 if (item.data) {
                     const nameSize = item.data.proje_adi.length > 20 ? '16px' : '22px';
+                    // Yıldızın yanında doğrudan adaletli algoritma skoru (Bayes) gösterilir
                     podiumHTML += `
                     <div class="podium-box ${item.class}">
                         <div class="podium-rank">${item.rank}</div>
                         <div class="podium-card flash">
                             <div class="p-name" style="font-size: ${nameSize}">${item.data.proje_adi}</div>
                             <div class="g-name">${item.data.ogrenci_adi}</div>
-                            <div class="score">⭐ ${item.data.ortalama.toFixed(2)}</div>
+                            <div class="score">⭐ ${item.data.skor.toFixed(2)}</div>
                             <div class="votes">${item.data.oy_sayisi} Oy Kullanıldı</div>
                         </div>
                     </div>`;
@@ -188,13 +178,14 @@
             let listHTML = '';
             const kalanProjeler = projeler.slice(3, 10); 
             kalanProjeler.forEach((p, index) => {
+                // Listede de doğrudan adaletli algoritma skoru (Bayes) gösterilir
                 listHTML += `
                 <div class="list-item flash">
                     <div class="rank-circle">${index + 4}</div>
                     <div class="item-info">
                         <h4>${p.proje_adi}</h4><p>${p.ogrenci_adi}</p>
                     </div>
-                    <div class="item-score">${p.ortalama.toFixed(2)}<span>${p.oy_sayisi} oy</span></div>
+                    <div class="item-score">${p.skor.toFixed(2)}<span>${p.oy_sayisi} oy</span></div>
                 </div>`;
             });
             
