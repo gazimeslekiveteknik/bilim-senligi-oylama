@@ -68,7 +68,6 @@
 <body>
     <div class="stars"></div>
     <div class="header">
-        <!-- BAŞLIK BURADA GÜNCELLENDİ -->
         <h1>19 MAYIS BİLİM VE GENÇLİK ŞENLİĞİ</h1>
         <h2 id="liveIndicator">🔴 CANLI PUAN DURUMU</h2>
     </div>
@@ -104,28 +103,54 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Canlı dinleyici (Gerçek zamanlı)
+        // Canlı dinleyici (Bayes Ortalaması Entegre Edildi)
         onSnapshot(collection(db, "projeler"), (snapshot) => {
             let projeler = [];
+            let toplamSistemOyu = 0;
+            let toplamSistemPuani = 0;
+
+            // 1. AŞAMA: Sistem genelinin verilerini topla (Bayes ortalaması için gerekli)
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                toplamSistemOyu += (data.toplam_oy_sayisi || 0);
+                toplamSistemPuani += (data.toplam_ham_puan || 0);
+            });
+
+            // Sistemin genel ortalaması (C). Sistemde hiç oy yoksa 0 kabul edilir.
+            const C = toplamSistemOyu > 0 ? (toplamSistemPuani / toplamSistemOyu) : 0;
+            
+            // Güvenilirlik barajı (m). Projenin rüştünü ispatlaması beklenen minimum oy sayısı.
+            const m = 10; 
+
+            // 2. AŞAMA: Projeleri puanla ve sıralama skorunu hesapla
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 const oySayisi = data.toplam_oy_sayisi || 0;
                 const hamPuan = data.toplam_ham_puan || 0;
-                const ortalama = oySayisi > 0 ? parseFloat((hamPuan / oySayisi).toFixed(2)) : 0;
                 
+                // Kullanıcıya gösterilecek klasik ortalama
+                const klasikOrtalama = oySayisi > 0 ? (hamPuan / oySayisi) : 0;
+
+                // Bayes Ortalaması (Arka planda gizlice sıralamayı belirleyecek skor)
+                let siralamaSkoru = 0;
+                if (oySayisi > 0) {
+                    siralamaSkoru = ((oySayisi / (oySayisi + m)) * klasikOrtalama) + ((m / (oySayisi + m)) * C);
+                }
+
                 projeler.push({
                     id: doc.id,
                     proje_adi: data.proje_adi,
                     ogrenci_adi: data.ogrenci_adi,
-                    ortalama: ortalama,
+                    ortalama: klasikOrtalama, // Ekranda görünecek puan
+                    skor: siralamaSkoru,      // Sıralamayı belirleyecek adil puan
                     oy_sayisi: oySayisi
                 });
             });
 
-            // Gelişmiş Sıralama: Ortalama eşitse çok oy alan öne geçer
+            // Gelişmiş Sıralama: Artık klasik ortalama ile değil, hesaplanan "skor" ile diziliyor.
             projeler.sort((a, b) => {
-                if (b.ortalama !== a.ortalama) return b.ortalama - a.ortalama;
-                return b.oy_sayisi - a.oy_sayisi;
+                if (b.skor !== a.skor) return b.skor - a.skor;
+                return b.oy_sayisi - a.oy_sayisi; // Skorlar tam eşitse çok oy alan kazanır
             });
 
             ekraniGuncelle(projeler);
