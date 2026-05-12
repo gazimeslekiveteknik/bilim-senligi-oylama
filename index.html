@@ -10,9 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
-        /* ═══════════════════════════════════════
-           STİLLER BİREBİR KORUNDU
-        ═══════════════════════════════════════ */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
         h1, h2 { color: #333; text-align: center; }
@@ -87,9 +84,13 @@
             <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #ffc107;">
                 <h3 style="margin-top: 0; color: #856404; font-size: 16px;">⚙️ Sistem Ayarları</h3>
                 <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                    <label for="oyLimiti" style="font-weight: 600; color: #555;">Kişi Başı Günlük Oy Hakkı:</label>
-                    <input type="number" id="oyLimiti" value="2" min="1" max="20" style="width: 80px; padding: 10px; margin: 0; text-align: center; font-weight: bold;">
-                    <button id="kaydetAyarBtn" class="btn-warning" style="width: auto; padding: 10px 25px;">Ayarı Güncelle</button>
+                    <label for="oyLimiti" style="font-weight: 600; color: #555;">Günlük Oy Hakkı:</label>
+                    <input type="number" id="oyLimiti" value="2" min="1" max="20" style="width: 70px; padding: 10px; margin: 0; text-align: center; font-weight: bold;">
+                    
+                    <label for="juriSifreInput" style="font-weight: 600; color: #555; margin-left: 10px;">Jüri Şifresi:</label>
+                    <input type="text" id="juriSifreInput" value="senlik2024" placeholder="Şifre Belirle" style="width: 140px; padding: 10px; margin: 0; font-weight: bold;">
+                    
+                    <button id="kaydetAyarBtn" class="btn-warning" style="width: auto; padding: 10px 25px;">Ayarları Güncelle</button>
                 </div>
             </div>
 
@@ -125,6 +126,10 @@
                 <button id="exportBtn" class="btn-info" style="width: auto; padding: 8px 15px;">Excel İndir</button>
                 <button id="logoutBtn" class="btn-danger" style="width: auto; padding: 8px 15px;">Çıkış</button>
             </div>
+            
+            <div style="width: 100%; margin-top: 10px;">
+                <input type="text" id="searchInput" placeholder="🔍 Proje Adı veya Öğrenci İsmi ile Ara..." style="margin-bottom: 0; padding: 10px 15px; border-radius: 8px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; font-size: 15px;">
+            </div>
         </div>
 
         <div class="project-grid" id="projeListesi"></div>
@@ -145,9 +150,47 @@
 
     window.addEventListener('afterprint', () => { document.body.className = ''; document.getElementById('printArea').innerHTML = ''; });
 
-    async function ayarlariGetir() { try { const docSnap = await getDoc(doc(db, "ayarlar", "genel")); if (docSnap.exists()) { const data = docSnap.data(); if(data.gunlukOyHakki) document.getElementById('oyLimiti').value = data.gunlukOyHakki; if(data.googleSheetsLink) document.getElementById('sheetCsvLink').value = data.googleSheetsLink; } } catch (e) { console.error("Ayar çekilemedi", e); } }
+    // YENİ: Jüri Şifresi Ayarları da çekiliyor
+    async function ayarlariGetir() { 
+        try { 
+            const docSnap = await getDoc(doc(db, "ayarlar", "genel")); 
+            if (docSnap.exists()) { 
+                const data = docSnap.data(); 
+                if(data.gunlukOyHakki) document.getElementById('oyLimiti').value = data.gunlukOyHakki; 
+                if(data.googleSheetsLink) document.getElementById('sheetCsvLink').value = data.googleSheetsLink; 
+                if(data.juriSifresi) document.getElementById('juriSifreInput').value = data.juriSifresi;
+            } 
+        } catch (e) { console.error("Ayar çekilemedi", e); } 
+    }
 
-    document.getElementById('kaydetAyarBtn').addEventListener('click', async () => { const limit = parseInt(document.getElementById('oyLimiti').value); if (!limit || limit < 1) return Swal.fire('Hata', 'Geçerli bir sayı girin.', 'warning'); try { await setDoc(doc(db, "ayarlar", "genel"), { gunlukOyHakki: limit }, { merge: true }); Swal.fire({ icon: 'success', title: 'Ayarlar Kaydedildi', text: `Katılımcıların günlük oy limiti ${limit} olarak güncellendi.`, timer: 2000 }); } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu.', 'error'); } });
+    // YENİ: Ayarları Kaydederken Jüri şifresini de veritabanına yazar
+    document.getElementById('kaydetAyarBtn').addEventListener('click', async () => { 
+        const limit = parseInt(document.getElementById('oyLimiti').value); 
+        const juriPass = document.getElementById('juriSifreInput').value.trim();
+        
+        if (!limit || limit < 1) return Swal.fire('Hata', 'Geçerli bir sayı girin.', 'warning'); 
+        if (!juriPass) return Swal.fire('Hata', 'Jüri şifresi boş olamaz!', 'warning'); 
+
+        try { 
+            await setDoc(doc(db, "ayarlar", "genel"), { gunlukOyHakki: limit, juriSifresi: juriPass }, { merge: true }); 
+            Swal.fire({ icon: 'success', title: 'Ayarlar Kaydedildi', text: `Ayarlar başarıyla güncellendi.`, timer: 2000 }); 
+        } catch (e) { Swal.fire('Hata', 'Ayarlar kaydedilirken sorun oluştu.', 'error'); } 
+    });
+
+    // YENİ: Arama Filtreleme Fonksiyonu
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const term = e.target.value.toLocaleLowerCase('tr-TR');
+        const cards = document.querySelectorAll('.project-card');
+        
+        cards.forEach(card => {
+            const textContent = card.innerText.toLocaleLowerCase('tr-TR');
+            if (textContent.includes(term)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
 
     function formatOgrenciAdi(metin) { if (!metin) return ""; let isimler = metin.split(/[,|-]+/).map(isim => { let parcalar = isim.trim().split(/\s+/); if (parcalar.length === 0 || parcalar[0] === "") return ""; if (parcalar.length === 1) { let k = parcalar[0]; return k.charAt(0).toLocaleUpperCase('tr-TR') + k.slice(1).toLocaleLowerCase('tr-TR'); } let soyad = parcalar.pop().toLocaleUpperCase('tr-TR'); let adlar = parcalar.map(k => k.charAt(0).toLocaleUpperCase('tr-TR') + k.slice(1).toLocaleLowerCase('tr-TR')); return adlar.join(' ') + ' ' + soyad; }).filter(i => i !== ""); return [...new Set(isimler)].join(' - '); }
     function formatProjeAdi(metin) { if (!metin) return ""; return metin.toLocaleUpperCase('tr-TR'); }
@@ -293,20 +336,4 @@
                 const dayBadge = data.sunum_gunu ? `<div class="day-title">📅 ${data.sunum_gunu}</div>` : "";
                 qrData.push({ id: id, link: getOylamaUrl(id) });
                 
-                htmlStr += `<div class="project-card"><input type="checkbox" class="project-checkbox no-print" value="${id}"><div>${dayBadge}<h3>${data.proje_adi}</h3><div class="grup-title">${data.grup_adi || "-"}</div><p>${data.ogrenci_adi}</p><div class="stats-box no-print"><div class="stat-item" title="Halk Oyu: ${halkOy} | Jüri Oyu: ${juriOy}"><span>Toplam Oy</span><strong>${toplamOy}</strong></div><div class="stat-item" style="border-left: 2px solid #ddd; padding-left: 15px;"><span>Genel Ort.</span><strong>⭐ ${genelOrtalama}</strong></div></div><div id="qr-${id}" class="qr-container"></div></div><div class="card-actions no-print"><button class="btn-warning" onclick="projeDuzenle('${id}', '${safeProje}', '${safeGrup}', '${safeSunum}', '${safeOgrenci}')">Düzenle</button><button class="btn-primary" onclick="masaIsimligiYazdir('${safeProje}', '${safeGrup}', '${safeOgrenci}', '${id}')">Masa İsimliği Yazdır</button><button class="btn-danger" onclick="projeSil('${id}')">Sil</button></div></div>`;
-            });
-            projeListesi.innerHTML = htmlStr;
-            qrData.forEach(item => { new QRCode(document.getElementById(`qr-${item.id}`), { text: item.link, width: 140, height: 140, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.H }); });
-        } catch (e) { projeListesi.innerHTML = "<p style='color:red;'>Hata oluştu.</p>"; }
-    }
-
-    document.getElementById('ekleBtn').addEventListener('click', async () => {
-        let pAdi = document.getElementById('projeAdi').value.trim(); const gAdi = document.getElementById('grupAdi').value.trim(); const sGunu = document.getElementById('sunumGunu').value.trim(); let oAdi = document.getElementById('ogrenciAdi').value.trim();
-        const formatliOgrenciAdi = formatOgrenciAdi(oAdi); const formatliProjeAdi = formatProjeAdi(pAdi); 
-        if (!formatliProjeAdi || !formatliOgrenciAdi) return Swal.fire('Eksik Bilgi', 'Proje adı ve öğrenci isimleri zorunludur.', 'info');
-        document.getElementById('ekleBtn').disabled = true; document.getElementById('ekleBtn').innerText = "Ekleniyor...";
-        try { await addDoc(collection(db, "projeler"), { proje_adi: formatliProjeAdi, grup_adi: gAdi, sunum_gunu: sGunu, ogrenci_adi: formatliOgrenciAdi, toplam_ham_puan: 0, toplam_oy_sayisi: 0, eklenme_tarihi: new Date() }); document.getElementById('projeAdi').value = ""; document.getElementById('grupAdi').value = ""; document.getElementById('sunumGunu').value = ""; document.getElementById('ogrenciAdi').value = ""; Swal.fire({ icon: 'success', title: 'Başarılı!', text: 'Proje eklendi.', timer: 2000, showConfirmButton: false }); projeleriGetir(); } catch (e) { Swal.fire('Hata', 'Sorun oluştu.', 'error'); } finally { document.getElementById('ekleBtn').disabled = false; document.getElementById('ekleBtn').innerText = "Projeyi Ekle ve Karekod Üret"; }
-    });
-</script>
-</body>
-</html>
+                htmlStr += `<div class="project-card"><input type="checkbox" class="project-checkbox no-print" value="${id}"><div>${dayBadge}<h3>${data.proje_adi}</h3><div class="grup-title">${data.grup_adi || "-"}</div><p>${data.ogrenci_adi}</p><div class="stats-box no-print"><div class="stat-item"
