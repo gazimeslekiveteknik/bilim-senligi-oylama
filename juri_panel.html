@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jüri Değerlendirme Paneli - 19 Mayıs Bilim Şenliği</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0b0f19; color: #f1f5f9; margin: 0; padding: 0; }
+        .header { background: rgba(15, 20, 40, 0.9); padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+        .header h1 { margin: 0; font-size: 22px; color: #06b6d4; }
+        .header p { margin: 5px 0 0; font-size: 14px; color: #94a3b8; }
+        
+        #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; padding: 20px; text-align: center; }
+        .login-box { background: rgba(20, 25, 45, 0.8); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 350px; }
+        .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; box-sizing: border-box; text-align: center; font-family: 'Outfit'; }
+        .login-box button { width: 100%; padding: 12px; background: #4ade80; color: #0b0f19; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+        #dashboard { display: none; padding: 20px; max-width: 600px; margin: 0 auto; padding-bottom: 100px; }
+        
+        .project-card { background: rgba(20, 25, 45, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 15px; transition: 0.3s; }
+        .project-card.voted { opacity: 0.6; border-color: #4ade80; pointer-events: none; }
+        .project-title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 5px; }
+        .student-name { font-size: 14px; color: #94a3b8; margin-bottom: 15px; }
+        
+        .rating-buttons { display: flex; justify-content: space-between; gap: 8px; }
+        .rate-btn { flex: 1; padding: 10px 0; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; color: #ffd700; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .rate-btn:hover, .rate-btn:active { background: #ffd700; color: #0b0f19; }
+        .voted-badge { display: none; color: #4ade80; font-weight: bold; font-size: 14px; text-align: right; }
+        .project-card.voted .rating-buttons { display: none; }
+        .project-card.voted .voted-badge { display: block; }
+
+        .progress-container { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f1428; padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .progress-text { color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Jüri Değerlendirme Paneli</h1>
+        <p>19 Mayıs Bilim ve Gençlik Şenliği</p>
+    </div>
+
+    <div id="loginScreen">
+        <div class="login-box">
+            <h2 style="margin-top: 0;">Jüri Girişi</h2>
+            <p style="font-size: 13px; color: #94a3b8;">Lütfen sistem yöneticisi tarafından size verilen jüri şifresini giriniz.</p>
+            <input type="password" id="passwordInput" placeholder="Jüri Şifresi">
+            <button id="loginBtn">Giriş Yap</button>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <div id="projectList">
+            <p style="text-align: center; color: #94a3b8;">Projeler yükleniyor...</p>
+        </div>
+    </div>
+
+    <div class="progress-container" id="progressContainer" style="display: none;">
+        <div class="progress-text">İlerleme: <span id="votedCount">0</span> / <span id="totalCount">0</span> Proje</div>
+        <div style="font-size: 12px; color: #4ade80;">Değerlendirmeler anında kaydedilir.</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, increment, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k", authDomain: "bilim-senligi-oylama.firebaseapp.com", projectId: "bilim-senligi-oylama",
+            storageBucket: "bilim-senligi-oylama.firebasestorage.app", messagingSenderId: "759289316087", appId: "1:759289316087:web:885560206050005e6d49f2"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let systemPassword = "senlik2024"; // Varsayılan, veritabanından güncellenecek
+        let totalProjects = 0;
+        let votedProjectsList = [];
+
+        // Hafıza Kontrolü (oyla.html'deki sistemle uyumlu)
+        function getJuriMemory() {
+            let durumLocal = JSON.parse(localStorage.getItem('senlikOylama')) || {};
+            return durumLocal.tumJuriOylananlar || [];
+        }
+
+        function addToJuriMemory(id) {
+            let durumLocal = JSON.parse(localStorage.getItem('senlikOylama')) || {};
+            if(!durumLocal.tumJuriOylananlar) durumLocal.tumJuriOylananlar = [];
+            durumLocal.tumJuriOylananlar.push(id);
+            localStorage.setItem('senlikOylama', JSON.stringify(durumLocal));
+            votedProjectsList = durumLocal.tumJuriOylananlar;
+            updateProgress();
+        }
+
+        function updateProgress() {
+            document.getElementById('votedCount').innerText = votedProjectsList.length;
+        }
+
+        // Başlangıçta Şifreyi Çek
+        async function fetchSettings() {
+            try {
+                const ayarSnap = await getDoc(doc(db, "ayarlar", "genel"));
+                if (ayarSnap.exists() && ayarSnap.data().juriSifresi) {
+                    systemPassword = ayarSnap.data().juriSifresi;
+                }
+            } catch (e) { console.error("Ayarlar çekilemedi."); }
+        }
+
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const inputPass = document.getElementById('passwordInput').value.trim();
+            if(inputPass === systemPassword) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('progressContainer').style.display = 'flex';
+                votedProjectsList = getJuriMemory();
+                loadProjects();
+            } else {
+                Swal.fire('Hata', 'Hatalı jüri şifresi!', 'error');
+            }
+        });
+
+        async function loadProjects() {
+            const listDiv = document.getElementById('projectList');
+            try {
+                const q = query(collection(db, "projeler"), orderBy("eklenme_tarihi", "desc"));
+                const querySnapshot = await getDocs(q);
+                totalProjects = querySnapshot.size;
+                document.getElementById('totalCount').innerText = totalProjects;
+                updateProgress();
+
+                let html = '';
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const pId = docSnap.id;
+                    const isVoted = votedProjectsList.includes(pId);
+                    
+                    html += `
+                    <div class="project-card ${isVoted ? 'voted' : ''}" id="card-${pId}">
+                        <div class="project-title">${data.proje_adi}</div>
+                        <div class="student-name">Grup: ${data.grup_adi || '-'} | ${data.ogrenci_adi}</div>
+                        
+                        <div class="rating-buttons">
+                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 1)">1</button>
+                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 2)">2</button>
+                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 3)">3</button>
+                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 4)">4</button>
+                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 5)">5</button>
+                        </div>
+                        <div class="voted-badge">✓ Puan Verildi</div>
+                    </div>`;
+                });
+                listDiv.innerHTML = html;
+            } catch (error) {
+                listDiv.innerHTML = '<p style="color:red; text-align:center;">Projeler yüklenirken hata oluştu.</p>';
+            }
+        }
+
+        window.submitJuriVote = async function(projectId, puan) {
+            Swal.fire({
+                title: 'Emin misiniz?',
+                text: `Bu projeye ${puan} puan vermek üzeresiniz. Puan sonradan değiştirilemez.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Evet, Puanla',
+                cancelButtonText: 'İptal',
+                confirmButtonColor: '#4ade80'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Kaydediliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+                    try {
+                        const projeRef = doc(db, "projeler", projectId);
+                        await updateDoc(projeRef, {
+                            juri_ham_puan: increment(puan),
+                            juri_oy_sayisi: increment(1),
+                            toplam_ham_puan: increment(puan),
+                            toplam_oy_sayisi: increment(1)
+                        });
+                        
+                        addToJuriMemory(projectId);
+                        document.getElementById(`card-${projectId}`).classList.add('voted');
+                        Swal.fire('Başarılı', 'Oyunuz kaydedildi!', 'success');
+                    } catch (error) {
+                        Swal.fire('Hata', 'İşlem başarısız. İnternet bağlantınızı kontrol edin.', 'error');
+                    }
+                }
+            });
+        }
+
+        fetchSettings();
+    </script>
+</body>
+</html>
