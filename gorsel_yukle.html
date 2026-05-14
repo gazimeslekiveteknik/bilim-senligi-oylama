@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje Görseli Yükle - Gazi MTAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0b0f19; color: #f1f5f9; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .upload-box { background: rgba(20, 25, 45, 0.9); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: #06b6d4; margin-top: 0; }
+        select, input[type="file"], button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-family: 'Outfit'; box-sizing: border-box; font-size: 15px; }
+        select option { background: #0b0f19; color: white; }
+        button { background: #3b82f6; color: white; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        button:hover { background: #2563eb; }
+        .progress-bar { height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; margin-top: 15px; display: none; }
+        .progress-fill { height: 100%; background: #4ade80; width: 0%; transition: width 0.3s; }
+        #previewImage { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; margin-top: 15px; display: none; border: 2px solid #06b6d4; }
+    </style>
+</head>
+<body>
+
+    <div class="upload-box">
+        <h2>📷 Proje Görseli Yükle</h2>
+        <p style="font-size: 13px; color: #94a3b8;">Lütfen projenizi seçin ve standınızı/projenizi anlatan 1 adet yatay görsel yükleyin.</p>
+        
+        <select id="projectSelect">
+            <option value="">-- Projenizi Seçin --</option>
+            </select>
+
+        <input type="file" id="fileInput" accept="image/*">
+        
+        <img id="previewImage" alt="Önizleme">
+
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <button id="uploadBtn">Görseli Kaydet</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k", authDomain: "bilim-senligi-oylama.firebaseapp.com", projectId: "bilim-senligi-oylama",
+            storageBucket: "bilim-senligi-oylama.firebasestorage.app", messagingSenderId: "759289316087", appId: "1:759289316087:web:885560206050005e6d49f2"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        const projectSelect = document.getElementById('projectSelect');
+        const fileInput = document.getElementById('fileInput');
+        const previewImage = document.getElementById('previewImage');
+
+        async function loadProjects() {
+            try {
+                const q = query(collection(db, "projeler"), orderBy("proje_adi", "asc"));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const option = document.createElement('option');
+                    option.value = docSnap.id;
+                    option.textContent = `${data.proje_adi} (${data.ogrenci_adi})`;
+                    projectSelect.appendChild(option);
+                });
+            } catch (e) {
+                Swal.fire('Hata', 'Projeler yüklenemedi.', 'error');
+            }
+        }
+        loadProjects();
+
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const projectId = projectSelect.value;
+            const file = fileInput.files[0];
+
+            if (!projectId) return Swal.fire('Uyarı', 'Lütfen projenizi seçin.', 'warning');
+            if (!file) return Swal.fire('Uyarı', 'Lütfen bir görsel seçin.', 'warning');
+
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadBtn').innerText = "Yükleniyor...";
+            document.getElementById('progressBar').style.display = 'block';
+
+            const fileExtension = file.name.split('.').pop();
+            const storageRef = ref(storage, `proje_gorselleri/${projectId}.${fileExtension}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    document.getElementById('progressFill').style.width = progress + '%';
+                }, 
+                (error) => {
+                    Swal.fire('Hata', 'Görsel yüklenirken bir hata oluştu.', 'error');
+                    document.getElementById('uploadBtn').disabled = false;
+                    document.getElementById('uploadBtn').innerText = "Görseli Kaydet";
+                }, 
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    await updateDoc(doc(db, "projeler", projectId), { resim_url: downloadURL });
+                    Swal.fire('Başarılı!', 'Proje görseli sisteme eklendi.', 'success').then(() => {
+                        window.location.reload();
+                    });
+                }
+            );
+        });
+    </script>
+</body>
+</html>
