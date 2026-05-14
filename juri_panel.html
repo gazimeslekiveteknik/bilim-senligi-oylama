@@ -38,13 +38,13 @@
 
     <div class="header">
         <h1>Jüri Değerlendirme Paneli</h1>
-        <p>19 Mayıs Bilim ve Gençlik Şenliği</p>
+        <p>🔬 Aktif Projeler Listeleniyor</p>
     </div>
 
     <div id="loginScreen">
         <div class="login-box">
             <h2 style="margin-top: 0;">Jüri Girişi</h2>
-            <p style="font-size: 13px; color: #94a3b8;">Projeler o anki canlı sıralamaya (Sıralama Ekranı) göre listelenir.</p>
+            <p style="font-size: 13px; color: #94a3b8;">Sadece etkileşim almış aktif projeler listelenir.</p>
             <input type="password" id="passwordInput" placeholder="Jüri Şifresi">
             <button id="loginBtn">Giriş Yap</button>
         </div>
@@ -52,13 +52,13 @@
 
     <div id="dashboard">
         <div id="projectList">
-            <p style="text-align: center; color: #94a3b8;">Sıralama senkronize ediliyor...</p>
+            <p style="text-align: center; color: #94a3b8;">Filtreler uygulanıyor...</p>
         </div>
     </div>
 
     <div class="progress-container" id="progressContainer" style="display: none;">
         <div class="progress-text">Puanlanan: <span id="votedCount">0</span> / <span id="totalCount">0</span></div>
-        <div style="font-size: 11px; color: #4ade80;">Sıralama: Canlı Skor Tablosu</div>
+        <div style="font-size: 11px; color: #4ade80;">Durum: Canlı Sıralama</div>
     </div>
 
     <script type="module">
@@ -73,7 +73,7 @@
         const db = getFirestore(app);
 
         let systemPassword = "senlik2024";
-        let totalProjects = 0;
+        let activeProjectCount = 0;
         let votedProjectsList = [];
 
         function getJuriMemory() {
@@ -120,54 +120,57 @@
             const listDiv = document.getElementById('projectList');
             try {
                 const querySnapshot = await getDocs(collection(db, "projeler"));
-                totalProjects = querySnapshot.size;
-                document.getElementById('totalCount').innerText = totalProjects;
                 
                 let projelerRaw = [];
                 let halkToplamSistemOyu = 0;
                 let halkToplamSistemPuani = 0;
 
-                // 1. ADIM: Bayes Sabitlerini Hesapla (Sıralama.html ile aynı)
+                // 1. ADIM: Bayes Sabitlerini Hesapla
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const jOy = data.juri_oy_sayisi || 0;
                     const jPuan = data.juri_ham_puan || 0;
                     const tOy = data.toplam_oy_sayisi || 0;
                     const tPuan = data.toplam_ham_puan || 0;
-                    const hOy = Math.max(0, tOy - jOy);
-                    const hPuan = Math.max(0, tPuan - jPuan);
-                    halkToplamSistemOyu += hOy;
-                    halkToplamSistemPuani += hPuan;
-                    projelerRaw.push({ id: docSnap.id, ...data, hOy, hPuan, jOy, jPuan, tOy });
+                    
+                    // KRİTİK FİLTRE: Sadece en az 1 oy almış projeleri işleme al
+                    if (tOy > 0) {
+                        const hOy = Math.max(0, tOy - jOy);
+                        const hPuan = Math.max(0, tPuan - jPuan);
+                        halkToplamSistemOyu += hOy;
+                        halkToplamSistemPuani += hPuan;
+                        projelerRaw.push({ id: docSnap.id, ...data, hOy, hPuan, jOy, jPuan, tOy });
+                    }
                 });
 
                 const C = halkToplamSistemOyu > 0 ? (halkToplamSistemPuani / halkToplamSistemOyu) : 0;
                 const m = 10; 
 
-                // 2. ADIM: Her Proje İçin Final Skoru Hesapla (70/30 Ağırlık)
+                // 2. ADIM: Final Skorlarını Hesapla
                 let siralamaListesi = projelerRaw.map(p => {
                     const halkKlasikOrtalama = p.hOy > 0 ? (p.hPuan / p.hOy) : 0;
                     let halkBayesSkoru = 0;
                     if (p.hOy > 0) { 
                         halkBayesSkoru = ((p.hOy / (p.hOy + m)) * halkKlasikOrtalama) + ((m / (p.hOy + m)) * C); 
                     }
-
                     const juriSkoru = p.jOy > 0 ? (p.jPuan / p.jOy) : 0;
 
                     let finalSkor = 0;
                     if (p.hOy > 0 && p.jOy > 0) { finalSkor = (halkBayesSkoru * 0.70) + (juriSkoru * 0.30); } 
-                    else if (p.hOy > 0 && p.jOy === 0) { finalSkor = halkBayesSkoru; } 
-                    else if (p.hOy === 0 && p.jOy > 0) { finalSkor = juriSkoru; }
+                    else if (p.hOy > 0) { finalSkor = halkBayesSkoru; } 
+                    else if (p.jOy > 0) { finalSkor = juriSkoru; }
 
                     return { ...p, finalSkor };
                 });
 
-                // 3. ADIM: Sıralamayı Uygula (Skor ve Oy sayısına göre)
+                // 3. ADIM: Sırala
                 siralamaListesi.sort((a, b) => {
                     if (b.finalSkor !== a.finalSkor) return b.finalSkor - a.finalSkor;
                     return b.tOy - a.tOy;
                 });
 
+                activeProjectCount = siralamaListesi.length;
+                document.getElementById('totalCount').innerText = activeProjectCount;
                 updateProgress();
 
                 let html = '';
@@ -198,20 +201,20 @@
                     }
                 });
                 
-                if (gorunurProjeSayisi === 0 && totalProjects > 0) {
-                    listDiv.innerHTML = `<div style="text-align:center; padding:40px;"><div style="font-size:50px;">🎉</div><h3 style="color:#4ade80;">Tüm Projeler Bitti!</h3><p style="color:#94a3b8;">Sıralama listesindeki tüm projeleri değerlendirdiniz.</p></div>`;
+                if (gorunurProjeSayisi === 0) {
+                    listDiv.innerHTML = `<div style="text-align:center; padding:40px;"><div style="font-size:50px;">✅</div><h3 style="color:#4ade80;">Tamamlandı</h3><p style="color:#94a3b8;">Aktif tüm projeleri değerlendirdiniz.</p></div>`;
                 } else {
                     listDiv.innerHTML = html;
                 }
             } catch (error) {
-                listDiv.innerHTML = '<p style="color:red; text-align:center;">Sıralama verisi çekilemedi.</p>';
+                listDiv.innerHTML = '<p style="color:red; text-align:center;">Veriler süzülürken hata oluştu.</p>';
             }
         }
 
         window.submitJuriVote = async function(projectId, puan) {
             Swal.fire({
-                title: 'Onaylıyor musunuz?',
-                text: `${puan} puan verilecek.`,
+                title: 'Puan Verilsin mi?',
+                text: `${puan} puan seçildi.`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Evet',
@@ -219,7 +222,6 @@
                 confirmButtonColor: '#4ade80'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({ title: 'Kaydediliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
                     try {
                         const projeRef = doc(db, "projeler", projectId);
                         await updateDoc(projeRef, {
@@ -228,17 +230,15 @@
                             toplam_ham_puan: increment(puan),
                             toplam_oy_sayisi: increment(1)
                         });
-                        
                         addToJuriMemory(projectId);
                         const card = document.getElementById(`card-${projectId}`);
                         if(card) {
                             card.style.opacity = '0';
-                            card.style.transform = 'scale(0.9)';
-                            setTimeout(() => { card.style.display = 'none'; if(votedProjectsList.length >= totalProjects) loadProjects(); }, 400);
+                            setTimeout(() => { card.style.display = 'none'; if(votedProjectsList.length >= activeProjectCount) loadProjects(); }, 400);
                         }
-                        Swal.fire({ icon: 'success', title: 'Puan Verildi', timer: 1000, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'Kaydedildi', timer: 1000, showConfirmButton: false });
                     } catch (error) {
-                        Swal.fire('Hata', 'Puan kaydedilemedi.', 'error');
+                        Swal.fire('Hata', 'İşlem başarısız.', 'error');
                     }
                 }
             });
