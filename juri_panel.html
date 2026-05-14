@@ -19,20 +19,19 @@
 
         #dashboard { display: none; padding: 20px; max-width: 600px; margin: 0 auto; padding-bottom: 100px; }
         
-        .project-card { position: relative; background: rgba(20, 25, 45, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 20px; transition: 0.3s; animation: slideIn 0.5s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
+        .project-card { position: relative; background: rgba(20, 25, 45, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 20px; transition: 0.3s; }
+        .rank-badge { position: absolute; top: 10px; left: 10px; background: #ffd700; color: #0b0f19; padding: 2px 8px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 2; }
         .score-badge { position: absolute; top: 10px; right: 10px; background: rgba(6, 182, 212, 0.2); color: #06b6d4; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; border: 1px solid rgba(6, 182, 212, 0.3); }
         
-        .project-title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 5px; padding-right: 60px; }
+        .project-title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 5px; padding: 0 40px; }
         .student-name { font-size: 13px; color: #94a3b8; margin-bottom: 15px; }
         
         .rating-buttons { display: flex; justify-content: space-between; gap: 8px; }
         .rate-btn { flex: 1; padding: 12px 0; background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 8px; color: #ffd700; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; }
-        .rate-btn:hover, .rate-btn:active { background: #ffd700; color: #0b0f19; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+        .rate-btn:hover, .rate-btn:active { background: #ffd700; color: #0b0f19; }
 
-        .progress-container { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f1428; padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
-        .progress-text { color: white; font-weight: bold; font-size: 14px; }
+        .progress-container { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f1428; padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .progress-text { color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -45,7 +44,7 @@
     <div id="loginScreen">
         <div class="login-box">
             <h2 style="margin-top: 0;">Jüri Girişi</h2>
-            <p style="font-size: 13px; color: #94a3b8;">Sistemdeki güncel sıralamaya göre listelenmiş projeleri puanlayın.</p>
+            <p style="font-size: 13px; color: #94a3b8;">Projeler o anki canlı sıralamaya (Sıralama Ekranı) göre listelenir.</p>
             <input type="password" id="passwordInput" placeholder="Jüri Şifresi">
             <button id="loginBtn">Giriş Yap</button>
         </div>
@@ -53,18 +52,18 @@
 
     <div id="dashboard">
         <div id="projectList">
-            <p style="text-align: center; color: #94a3b8;">Sıralama hesaplanıyor...</p>
+            <p style="text-align: center; color: #94a3b8;">Sıralama senkronize ediliyor...</p>
         </div>
     </div>
 
     <div class="progress-container" id="progressContainer" style="display: none;">
-        <div class="progress-text">Puanladığınız: <span id="votedCount">0</span> / <span id="totalCount">0</span></div>
-        <div style="font-size: 11px; color: #4ade80; text-align: right;">Sıralama: Yüksek → Düşük</div>
+        <div class="progress-text">Puanlanan: <span id="votedCount">0</span> / <span id="totalCount">0</span></div>
+        <div style="font-size: 11px; color: #4ade80;">Sıralama: Canlı Skor Tablosu</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, increment, query } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBS-OSazqWy0IZyO0gkyvCHOVlDIa4EH3k", authDomain: "bilim-senligi-oylama.firebaseapp.com", projectId: "bilim-senligi-oylama",
@@ -123,39 +122,71 @@
                 const querySnapshot = await getDocs(collection(db, "projeler"));
                 totalProjects = querySnapshot.size;
                 document.getElementById('totalCount').innerText = totalProjects;
-                updateProgress();
+                
+                let projelerRaw = [];
+                let halkToplamSistemOyu = 0;
+                let halkToplamSistemPuani = 0;
 
-                let projelerArray = [];
+                // 1. ADIM: Bayes Sabitlerini Hesapla (Sıralama.html ile aynı)
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
-                    // Ortalama Puan Hesapla
+                    const jOy = data.juri_oy_sayisi || 0;
+                    const jPuan = data.juri_ham_puan || 0;
                     const tOy = data.toplam_oy_sayisi || 0;
                     const tPuan = data.toplam_ham_puan || 0;
-                    const ortalama = tOy > 0 ? (tPuan / tOy) : 0;
-                    
-                    projelerArray.push({ id: docSnap.id, ...data, ortalama: ortalama });
+                    const hOy = Math.max(0, tOy - jOy);
+                    const hPuan = Math.max(0, tPuan - jPuan);
+                    halkToplamSistemOyu += hOy;
+                    halkToplamSistemPuani += hPuan;
+                    projelerRaw.push({ id: docSnap.id, ...data, hOy, hPuan, jOy, jPuan, tOy });
                 });
 
-                // YÜKSEK PUANDAN DÜŞÜĞE SIRALA
-                projelerArray.sort((a, b) => b.ortalama - a.ortalama);
+                const C = halkToplamSistemOyu > 0 ? (halkToplamSistemPuani / halkToplamSistemOyu) : 0;
+                const m = 10; 
+
+                // 2. ADIM: Her Proje İçin Final Skoru Hesapla (70/30 Ağırlık)
+                let siralamaListesi = projelerRaw.map(p => {
+                    const halkKlasikOrtalama = p.hOy > 0 ? (p.hPuan / p.hOy) : 0;
+                    let halkBayesSkoru = 0;
+                    if (p.hOy > 0) { 
+                        halkBayesSkoru = ((p.hOy / (p.hOy + m)) * halkKlasikOrtalama) + ((m / (p.hOy + m)) * C); 
+                    }
+
+                    const juriSkoru = p.jOy > 0 ? (p.jPuan / p.jOy) : 0;
+
+                    let finalSkor = 0;
+                    if (p.hOy > 0 && p.jOy > 0) { finalSkor = (halkBayesSkoru * 0.70) + (juriSkoru * 0.30); } 
+                    else if (p.hOy > 0 && p.jOy === 0) { finalSkor = halkBayesSkoru; } 
+                    else if (p.hOy === 0 && p.jOy > 0) { finalSkor = juriSkoru; }
+
+                    return { ...p, finalSkor };
+                });
+
+                // 3. ADIM: Sıralamayı Uygula (Skor ve Oy sayısına göre)
+                siralamaListesi.sort((a, b) => {
+                    if (b.finalSkor !== a.finalSkor) return b.finalSkor - a.finalSkor;
+                    return b.tOy - a.tOy;
+                });
+
+                updateProgress();
 
                 let html = '';
                 let gorunurProjeSayisi = 0;
 
-                projelerArray.forEach((proje) => {
+                siralamaListesi.forEach((proje, index) => {
                     const isVoted = votedProjectsList.includes(proje.id);
                     
                     if (!isVoted) {
                         gorunurProjeSayisi++;
-                        const imageHTML = proje.resim_url ? `<img src="${proje.resim_url}" style="width:100%; aspect-ratio: 16/9; object-fit:cover; border-radius:8px; margin-bottom:12px; border: 1px solid rgba(255,255,255,0.1);">` : '';
+                        const imageHTML = proje.resim_url ? `<img src="${proje.resim_url}" style="width:100%; aspect-ratio: 16/9; object-fit:cover; border-radius:8px; margin-bottom:12px;">` : '';
                         
                         html += `
                         <div class="project-card" id="card-${proje.id}">
-                            <div class="score-badge">⭐ ${proje.ortalama.toFixed(2)}</div>
+                            <div class="rank-badge">#${index + 1}</div>
+                            <div class="score-badge">⭐ ${proje.finalSkor.toFixed(2)}</div>
                             ${imageHTML}
                             <div class="project-title">${proje.proje_adi}</div>
                             <div class="student-name">Grup: ${proje.grup_adi || '-'} | ${proje.ogrenci_adi}</div>
-                            
                             <div class="rating-buttons">
                                 <button class="rate-btn" onclick="submitJuriVote('${proje.id}', 1)">1</button>
                                 <button class="rate-btn" onclick="submitJuriVote('${proje.id}', 2)">2</button>
@@ -168,12 +199,12 @@
                 });
                 
                 if (gorunurProjeSayisi === 0 && totalProjects > 0) {
-                    listDiv.innerHTML = `<div style="text-align:center; padding:40px;"><div style="font-size:50px;">🏆</div><h3 style="color:#4ade80;">Harika!</h3><p style="color:#94a3b8;">Tüm projeler değerlendirildi.</p></div>`;
+                    listDiv.innerHTML = `<div style="text-align:center; padding:40px;"><div style="font-size:50px;">🎉</div><h3 style="color:#4ade80;">Tüm Projeler Bitti!</h3><p style="color:#94a3b8;">Sıralama listesindeki tüm projeleri değerlendirdiniz.</p></div>`;
                 } else {
                     listDiv.innerHTML = html;
                 }
             } catch (error) {
-                listDiv.innerHTML = '<p style="color:red; text-align:center;">Hata oluştu.</p>';
+                listDiv.innerHTML = '<p style="color:red; text-align:center;">Sıralama verisi çekilemedi.</p>';
             }
         }
 
@@ -188,7 +219,7 @@
                 confirmButtonColor: '#4ade80'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({ title: 'Puan kaydediliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+                    Swal.fire({ title: 'Kaydediliyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
                     try {
                         const projeRef = doc(db, "projeler", projectId);
                         await updateDoc(projeRef, {
@@ -205,9 +236,9 @@
                             card.style.transform = 'scale(0.9)';
                             setTimeout(() => { card.style.display = 'none'; if(votedProjectsList.length >= totalProjects) loadProjects(); }, 400);
                         }
-                        Swal.fire({ icon: 'success', title: 'Tamamlandı', timer: 1000, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'Puan Verildi', timer: 1000, showConfirmButton: false });
                     } catch (error) {
-                        Swal.fire('Hata', 'Bağlantı sorunu.', 'error');
+                        Swal.fire('Hata', 'Puan kaydedilemedi.', 'error');
                     }
                 }
             });
