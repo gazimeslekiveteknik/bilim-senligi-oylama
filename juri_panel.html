@@ -20,16 +20,12 @@
         #dashboard { display: none; padding: 20px; max-width: 600px; margin: 0 auto; padding-bottom: 100px; }
         
         .project-card { background: rgba(20, 25, 45, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 15px; transition: 0.3s; }
-        .project-card.voted { opacity: 0.6; border-color: #4ade80; pointer-events: none; }
         .project-title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 5px; }
         .student-name { font-size: 14px; color: #94a3b8; margin-bottom: 15px; }
         
         .rating-buttons { display: flex; justify-content: space-between; gap: 8px; }
         .rate-btn { flex: 1; padding: 10px 0; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; color: #ffd700; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
         .rate-btn:hover, .rate-btn:active { background: #ffd700; color: #0b0f19; }
-        .voted-badge { display: none; color: #4ade80; font-weight: bold; font-size: 14px; text-align: right; }
-        .project-card.voted .rating-buttons { display: none; }
-        .project-card.voted .voted-badge { display: block; }
 
         .progress-container { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f1428; padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .progress-text { color: white; font-weight: bold; }
@@ -58,8 +54,8 @@
     </div>
 
     <div class="progress-container" id="progressContainer" style="display: none;">
-        <div class="progress-text">İlerleme: <span id="votedCount">0</span> / <span id="totalCount">0</span> Proje</div>
-        <div style="font-size: 12px; color: #4ade80;">Değerlendirmeler anında kaydedilir.</div>
+        <div class="progress-text">Değerlendirilen: <span id="votedCount">0</span> / <span id="totalCount">0</span></div>
+        <div style="font-size: 12px; color: #4ade80;">Oylananlar listeden silinir.</div>
     </div>
 
     <script type="module">
@@ -73,11 +69,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let systemPassword = "senlik2024"; // Varsayılan, veritabanından güncellenecek
+        let systemPassword = "senlik2024";
         let totalProjects = 0;
         let votedProjectsList = [];
 
-        // Hafıza Kontrolü (oyla.html'deki sistemle uyumlu)
         function getJuriMemory() {
             let durumLocal = JSON.parse(localStorage.getItem('senlikOylama')) || {};
             return durumLocal.tumJuriOylananlar || [];
@@ -96,7 +91,6 @@
             document.getElementById('votedCount').innerText = votedProjectsList.length;
         }
 
-        // Başlangıçta Şifreyi Çek
         async function fetchSettings() {
             try {
                 const ayarSnap = await getDoc(doc(db, "ayarlar", "genel"));
@@ -129,27 +123,45 @@
                 updateProgress();
 
                 let html = '';
+                let gorunurProjeSayisi = 0;
+
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const pId = docSnap.id;
                     const isVoted = votedProjectsList.includes(pId);
                     
-                    html += `
-                    <div class="project-card ${isVoted ? 'voted' : ''}" id="card-${pId}">
-                        <div class="project-title">${data.proje_adi}</div>
-                        <div class="student-name">Grup: ${data.grup_adi || '-'} | ${data.ogrenci_adi}</div>
+                    // SADECE OY VERİLMEMİŞ OLANLARI EKRANA ÇİZ
+                    if (!isVoted) {
+                        gorunurProjeSayisi++;
+                        const imageHTML = data.resim_url ? `<img src="${data.resim_url}" style="width:100%; aspect-ratio: 16/9; object-fit:cover; border-radius:8px; margin-bottom:10px; border: 1px solid rgba(255,255,255,0.1);">` : '';
                         
-                        <div class="rating-buttons">
-                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 1)">1</button>
-                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 2)">2</button>
-                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 3)">3</button>
-                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 4)">4</button>
-                            <button class="rate-btn" onclick="submitJuriVote('${pId}', 5)">5</button>
-                        </div>
-                        <div class="voted-badge">✓ Puan Verildi</div>
-                    </div>`;
+                        html += `
+                        <div class="project-card" id="card-${pId}">
+                            ${imageHTML}
+                            <div class="project-title">${data.proje_adi}</div>
+                            <div class="student-name">Grup: ${data.grup_adi || '-'} | ${data.ogrenci_adi}</div>
+                            
+                            <div class="rating-buttons">
+                                <button class="rate-btn" onclick="submitJuriVote('${pId}', 1)">1</button>
+                                <button class="rate-btn" onclick="submitJuriVote('${pId}', 2)">2</button>
+                                <button class="rate-btn" onclick="submitJuriVote('${pId}', 3)">3</button>
+                                <button class="rate-btn" onclick="submitJuriVote('${pId}', 4)">4</button>
+                                <button class="rate-btn" onclick="submitJuriVote('${pId}', 5)">5</button>
+                            </div>
+                        </div>`;
+                    }
                 });
-                listDiv.innerHTML = html;
+                
+                if (gorunurProjeSayisi === 0 && totalProjects > 0) {
+                    listDiv.innerHTML = `
+                        <div style="text-align:center; padding:40px;">
+                            <div style="font-size:50px;">✅</div>
+                            <h3 style="color:#4ade80;">Tebrikler!</h3>
+                            <p style="color:#94a3b8;">Tüm projeleri değerlendirdiniz. Emekleriniz için teşekkürler.</p>
+                        </div>`;
+                } else {
+                    listDiv.innerHTML = html;
+                }
             } catch (error) {
                 listDiv.innerHTML = '<p style="color:red; text-align:center;">Projeler yüklenirken hata oluştu.</p>';
             }
@@ -177,7 +189,19 @@
                         });
                         
                         addToJuriMemory(projectId);
-                        document.getElementById(`card-${projectId}`).classList.add('voted');
+                        
+                        // OY VERİLEN KARTI EKRANDAN ANINDA SİL
+                        const card = document.getElementById(`card-${projectId}`);
+                        if(card) {
+                            card.style.opacity = '0';
+                            setTimeout(() => { card.style.display = 'none'; }, 300);
+                        }
+                        
+                        // LİSTE BİTTİ Mİ KONTROLÜ
+                        if(votedProjectsList.length >= totalProjects) {
+                            setTimeout(() => { loadProjects(); }, 400); // Tebrik ekranını çağırmak için
+                        }
+                        
                         Swal.fire('Başarılı', 'Oyunuz kaydedildi!', 'success');
                     } catch (error) {
                         Swal.fire('Hata', 'İşlem başarısız. İnternet bağlantınızı kontrol edin.', 'error');
